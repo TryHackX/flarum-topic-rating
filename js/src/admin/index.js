@@ -1,4 +1,19 @@
 import app from 'flarum/admin/app';
+import SupportModal from './components/SupportModal';
+
+app.initializers.add('tryhackx-topic-rating-support', () => {
+    app.extensionData.for('tryhackx-topic-rating').registerSetting(function () {
+        return m('div', { className: 'TopicRating-support' }, [
+            m('button', {
+                className: 'Button',
+                onclick: () => app.modal.show(SupportModal),
+            }, [
+                m('i', { className: 'fas fa-heart Button-icon icon' }),
+                app.translator.trans('tryhackx-topic-rating.admin.support.button'),
+            ]),
+        ]);
+    });
+});
 
 app.initializers.add('tryhackx-topic-rating', () => {
     app.extensionData
