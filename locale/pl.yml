@@ -9,6 +9,12 @@ tryhackx-topic-rating:
       rate_label: Ocenianie tematów
       toggle_label: Włączanie/wyłączanie oceny w tematach
       reset_label: Resetowanie wszystkich ocen w tematach
+    support:
+      button: Wesprzyj rozwój
+      title: Wesprzyj tę modyfikację
+      description: Jeśli uważasz tę modyfikację za przydatną, rozważ wsparcie jej rozwoju niewielką darowizną. Każdy wkład pomaga utrzymać projekt przy życiu.
+      copy: Kopiuj adres
+      thanks: Dziękuję za wsparcie!
 
   forum:
     tooltip:
