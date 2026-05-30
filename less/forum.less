@@ -201,13 +201,167 @@
     position: relative;
 }
 
-.DiscussionListItem-info .item-rating {
-    position: absolute;
-    right: 80px;
-    top: 35px;
+// ─────────────────────────────────────────────────────────────────────
+// SHARED RESTRUCTURED DISCUSSION-LIST LAYOUT
+// Mirror of the identical block in flarum-thumb-sliders/less/forum.less.
+// Markup is produced by discussionListLayout.js (contentView override).
+// Replaces the former absolute-offset lattice (the .item-rating / @phone
+// row offsets that depended on .has-ThumbSlider and :has()) with a single
+// flex row plus a right-hand meta column that flexbox aligns automatically.
+//
+//   [thumb] [author] [main: title + info] [meta: tags/rating/replies/views]
+// ─────────────────────────────────────────────────────────────────────
+.DiscussionListItem-content--restructured {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 6px 12px 6px;
 
-    .StarRating {
+    > .ThumbSlider {
+        flex: 0 0 auto;
+    }
+
+    > .DiscussionListItem-author {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    > .DiscussionListItem-main {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+    }
+
+    // The big right margin core adds to dodge the old absolute items is no
+    // longer needed now that the meta column is a real flex sibling.
+    .DiscussionListItem-info .item-excerpt {
+        margin-right: 0;
+    }
+
+    > .DiscussionListItem-meta {
+        flex: 0 0 auto;
+        // Cap the meta column so a discussion with many tags wraps them
+        // down inside the column instead of pushing the row wider.
+        max-width: 18%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 4px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .DiscussionListItem-meta-item {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1.2;
+        color: var(--muted-color);
+    }
+
+    // Reply count (core renders a pill on mobile) and FoF views share one
+    // flat icon + number look so the column lines up.
+    .DiscussionListItem-meta-item--stat,
+    .DiscussionListItem-meta-item--views {
+        .DiscussionListItem-stats-item,
+        > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            width: auto;
+            margin: 0;
+            padding: 0;
+            background: none;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .icon,
+        .DiscussionListItem-stats-item-icon,
+        i {
+            display: inline-block;
+            width: 16px;
+            margin: 0;
+            font-size: 12px;
+            text-align: center;
+        }
+    }
+
+    // Keep the stars on a single row inside the column.
+    .DiscussionListItem-meta-item--rating .StarRating {
         flex-direction: row;
+    }
+
+    // Tag labels wrap naturally inside the (already-capped) meta column,
+    // so many tags stack down instead of pushing the row wider.
+    .DiscussionListItem-meta-item--tags {
+        .TagsLabel {
+            margin: 0;
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 4px 6px;
+        }
+    }
+}
+
+@media @phone {
+    .DiscussionListItem-content--restructured {
+        gap: 8px;
+        padding: 10px 6px 10px 6px;
+
+        > .ThumbSlider {
+            width: 56px !important;
+        }
+
+        // Override core's @phone `.DiscussionListItem-main { padding-right: 48px }`
+        // (that padding only existed to dodge the old absolute stats column).
+        .DiscussionListItem-main {
+            padding-right: 4px;
+        }
+
+        .DiscussionListItem-meta {
+            gap: 3px;
+        }
+
+        .DiscussionListItem-meta-item {
+            font-size: 11px;
+        }
+
+        .DiscussionListItem-meta-item--tags {
+            max-width: 110px;
+        }
+
+        .DiscussionListItem-author .Avatar {
+            .Avatar--size(30px);
+        }
+    }
+}
+
+// Reserve space to the right of the title for the meta column. Overrides
+// flarum/tags' own `.IndexPage .DiscussionListItem-title { margin-right }`
+// so the value survives a fresh reinstall of the (foreign) tags extension.
+@media @tablet-up {
+    .IndexPage,
+    .UserPage,
+    .DiscussionList--floatingTags {
+        .DiscussionListItem-content--restructured .DiscussionListItem-title {
+            margin-right: 32px;
+        }
+    }
+
+    // Tighter, symmetric horizontal padding on the row itself. Core ships
+    // 25 / 15 on tablet+, we want 12 / 12 to match the inner content
+    // padding rhythm (12px both sides on .DiscussionListItem-content--restructured).
+    .DiscussionListItem {
+        padding-right: 12px;
+        padding-left: 12px;
     }
 }
 

@@ -11,10 +11,14 @@ import StarRating from './components/StarRating';
 import LastRatedInfo from './components/LastRatedInfo';
 import RatingPolling from './components/RatingPolling';
 import ResetRatingsModal from './components/ResetRatingsModal';
+import installDiscussionListLayout from './discussionListLayout';
 import '../common/extend';
 
 app.initializers.add('tryhackx-topic-rating', () => {
     app.store.models['discussion-ratings'] = Rating;
+
+    // Shared, idempotent layout override coordinated with thumb-sliders + FoF views.
+    installDiscussionListLayout();
 
     extend(DiscussionHero.prototype, 'items', function (items) {
         const discussion = this.attrs.discussion;
@@ -32,13 +36,17 @@ app.initializers.add('tryhackx-topic-rating', () => {
     });
 
     extend(DiscussionListItem.prototype, 'infoItems', function (items) {
+        // Admin can hide the rating on the discussion list while keeping it on
+        // the discussion page. Undefined (older config) counts as enabled.
+        if (app.forum.attribute('tryhackxTopicRatingShowOnList') === false) return;
+
         const discussion = this.attrs.discussion;
         if (!discussion || discussion.ratingDisabled()) return;
 
         items.add('rating',
             <StarRating
                 discussion={discussion}
-                interactive={false}
+                interactive={app.forum.attribute('tryhackxTopicRatingRateOnList') !== false}
                 size="small"
                 showCount={false}
             />,

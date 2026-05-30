@@ -90,6 +90,10 @@ return [
     (new Extend\Settings())
         ->serializeToForum('tryhackxTopicRatingEnabled', 'tryhackx-topic-rating.enabled', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingAllowUnactivated', 'tryhackx-topic-rating.allow_unactivated', 'boolval', false)
+        ->serializeToForum('tryhackxTopicRatingShowOnList', 'tryhackx-topic-rating.show_on_list', 'boolval', true)
+        ->serializeToForum('tryhackxTopicRatingRateOnList', 'tryhackx-topic-rating.rate_on_list', 'boolval', true)
         ->default('tryhackx-topic-rating.enabled', true)
-        ->default('tryhackx-topic-rating.allow_unactivated', false),
+        ->default('tryhackx-topic-rating.allow_unactivated', false)
+        ->default('tryhackx-topic-rating.show_on_list', true)
+        ->default('tryhackx-topic-rating.rate_on_list', true),
 ];

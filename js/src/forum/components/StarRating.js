@@ -8,6 +8,30 @@ export default class StarRating extends Component {
         this.loading = false;
     }
 
+    oncreate(vnode) {
+        super.oncreate(vnode);
+        this.dom = vnode.dom;
+    }
+
+    // Paint the stars to a value (0–10) directly on the DOM, bypassing Mithril.
+    // Needed on the discussion list: DiscussionListItem uses a SubtreeRetainer
+    // that blocks the redraw which would otherwise reflect `hoveredValue`, so
+    // without this the hover preview never appears (only the CSS tooltip does).
+    paintStars(value) {
+        if (!this.dom) return;
+        this.dom.querySelectorAll('.StarRating-star').forEach((star, idx) => {
+            const i = idx + 1;
+            star.classList.remove('StarRating-star--full', 'StarRating-star--half', 'StarRating-star--empty');
+            if (value >= i * 2) {
+                star.classList.add('StarRating-star--full');
+            } else if (value >= (i - 1) * 2 + 1) {
+                star.classList.add('StarRating-star--half');
+            } else {
+                star.classList.add('StarRating-star--empty');
+            }
+        });
+    }
+
     view() {
         const discussion = this.attrs.discussion;
         if (!discussion) return null;
@@ -34,6 +58,7 @@ export default class StarRating extends Component {
                         onmouseleave={() => {
                             if (interactive && canRate && isLoggedIn) {
                                 this.hoveredValue = 0;
+                                this.paintStars((discussion.ratingAverage() || 0) * 2);
                             }
                         }}
                     >
@@ -112,7 +137,7 @@ export default class StarRating extends Component {
                 <span className={starClass} key={i}>
                     <span
                         className="StarRating-starHalf StarRating-starHalf--left"
-                        onmouseenter={() => { if (interactive) this.hoveredValue = leftValue; }}
+                        onmouseenter={() => { if (interactive) { this.hoveredValue = leftValue; this.paintStars(leftValue); } }}
                         onclick={(e) => {
                             if (interactive) {
                                 e.stopPropagation();
@@ -123,7 +148,7 @@ export default class StarRating extends Component {
                     ></span>
                     <span
                         className="StarRating-starHalf StarRating-starHalf--right"
-                        onmouseenter={() => { if (interactive) this.hoveredValue = rightValue; }}
+                        onmouseenter={() => { if (interactive) { this.hoveredValue = rightValue; this.paintStars(rightValue); } }}
                         onclick={(e) => {
                             if (interactive) {
                                 e.stopPropagation();
