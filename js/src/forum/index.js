@@ -23,6 +23,7 @@ app.initializers.add('tryhackx-topic-rating', () => {
     extend(DiscussionHero.prototype, 'items', function (items) {
         const discussion = this.attrs.discussion;
         if (!discussion || discussion.ratingDisabled()) return;
+        if (discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden') return;
 
         items.add('rating',
             <StarRating
@@ -42,6 +43,7 @@ app.initializers.add('tryhackx-topic-rating', () => {
 
         const discussion = this.attrs.discussion;
         if (!discussion || discussion.ratingDisabled()) return;
+        if (discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden') return;
 
         items.add('rating',
             <StarRating

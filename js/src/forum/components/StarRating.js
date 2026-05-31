@@ -43,15 +43,33 @@ export default class StarRating extends Component {
         const ratingDisabled = discussion.ratingDisabled();
         const requiresActivation = discussion.canRateRequiresActivation();
         const isLoggedIn = !!app.session.user;
-        const interactive = this.attrs.interactive !== false && !ratingDisabled;
+        const displayMode = (discussion.ratingDisplayMode && discussion.ratingDisplayMode()) || 'rate';
         const size = this.attrs.size || 'normal';
+
+        // 'hidden' mode is enforced upstream (forum/index.js skips rendering),
+        // but be defensive in case this is mounted from elsewhere.
+        if (displayMode === 'hidden') return null;
+
+        // 'message' mode: skip the stars entirely, show a short note.
+        if (displayMode === 'message' && !canRate) {
+            return (
+                <div className={'StarRating StarRating--' + size + ' StarRating--restricted'}>
+                    <span className="StarRating-restrictedMessage">
+                        <i className="fas fa-lock StarRating-restrictedIcon"></i>
+                        {app.translator.trans('tryhackx-topic-rating.forum.rating_restricted_message')}
+                    </span>
+                </div>
+            );
+        }
+
+        const interactive = this.attrs.interactive !== false && !ratingDisabled && displayMode === 'rate';
 
         const displayValue = this.hoveredValue > 0
             ? this.hoveredValue
             : (average * 2);
 
         return (
-            <div className={'StarRating StarRating--' + size + (this.loading ? ' StarRating--loading' : '') + (interactive && canRate ? ' StarRating--interactive' : '')}>
+            <div className={'StarRating StarRating--' + size + (this.loading ? ' StarRating--loading' : '') + (interactive && canRate ? ' StarRating--interactive' : '') + (!canRate && displayMode === 'readonly' ? ' StarRating--readonly' : '')}>
                 <div className="StarRating-starsWrap">
                     <div
                         className="StarRating-stars"
@@ -65,7 +83,7 @@ export default class StarRating extends Component {
                         {this.renderStars(displayValue, interactive && canRate && isLoggedIn, discussion)}
                     </div>
                     <div className="StarRating-tooltip">
-                        {this.renderTooltipContent(userRating, count, isLoggedIn, requiresActivation)}
+                        {this.renderTooltipContent(userRating, count, isLoggedIn, requiresActivation, canRate, displayMode)}
                     </div>
                 </div>
                 {this.attrs.showCount !== false && (
@@ -86,11 +104,13 @@ export default class StarRating extends Component {
         );
     }
 
-    renderTooltipContent(userRating, count, isLoggedIn, requiresActivation) {
+    renderTooltipContent(userRating, count, isLoggedIn, requiresActivation, canRate, displayMode) {
         if (!isLoggedIn) {
             return <span>{app.translator.trans('tryhackx-topic-rating.forum.tooltip.login_required')}</span>;
         } else if (requiresActivation) {
             return <span>{app.translator.trans('tryhackx-topic-rating.forum.tooltip.activation_required')}</span>;
+        } else if (!canRate && displayMode === 'readonly') {
+            return <span>{app.translator.trans('tryhackx-topic-rating.forum.tooltip.restricted')}</span>;
         } else if (userRating) {
             return [
                 <div className="StarRating-tooltipLabel">{app.translator.trans('tryhackx-topic-rating.forum.tooltip.your_rating')}</div>,

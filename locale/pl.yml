@@ -9,6 +9,41 @@ tryhackx-topic-rating:
       rate_on_list_help: Pozwól użytkownikom oceniać tematy bezpośrednio z listy przez kliknięcie gwiazdek (z podświetleniem przy najechaniu), tak jak na stronie tematu. Gdy wyłączone, lista pokazuje ocenę tylko do odczytu. Domyślnie włączone.
       allow_unactivated_label: Zezwól nieaktywowanym kontom na ocenianie
       allow_unactivated_help: Po włączeniu użytkownicy, którzy nie potwierdzili adresu e-mail, mogą oceniać tematy.
+
+      tag_config_label: Uprawnienia oceniania per tag
+      tag_config_help: |
+        Aktywne tylko gdy wbudowane rozszerzenie Tagi jest włączone. Dla każdego głównego tagu wybierz:
+        "Włączone" (domyślnie — każdy z globalnym uprawnieniem może oceniać),
+        "Wyłączone" (nikt nie może oceniać — chyba że posiada uprawnienie omijania),
+        lub "Wybrane grupy" (tylko wskazane grupy mogą oceniać).
+        Gdy główny tag ma stan "Włączone" lub "Wybrane grupy", rozwiń go aby nadpisać poszczególne sub-tagi
+        ("Dziedzicz" = zgodnie z rodzicem).
+        Gdy dyskusja ma wiele tagów: jakikolwiek "Wyłączony" tag blokuje ocenianie (chyba że user ma bypass).
+        Wśród pozostałych tagów wygrywa najbardziej permisywny.
+      tag_admin_note: |
+        Flarum twardo daje administratorom WSZYSTKIE uprawnienia (w tym omijanie) — nie da się tego cofnąć w siatce uprawnień poniżej. Aby kontrolować to dla tego rozszerzenia, użyj wyboru grup w ustawieniu "Omijanie blokad tag-owych" poniżej. Omijanie blokad przez administratorów będzie działać tylko wtedy, gdy grupa Administratorzy jest jawnie wybrana.
+      bypass_groups_label: Omijanie blokad tag-owych
+      bypass_groups_help: Wybierz grupy, które mogą omijać ograniczenia oceniania tagów. Jeśli nie wybierzesz żadnej grupy, omijanie ograniczeń nie będzie dostępne dla żadnej grupy (z wyjątkiem administratorów, zależnie od ustawienia powyżej).
+      bypass_select_all: Zaznacz wszystkie
+      bypass_clear_all: Wyczyść
+      tag_hierarchy_hint: Tagi są płaskie (żaden nie ma rodzica). Aby pokazały się rozwijane sub-tagi, w Admin → Tags edytuj tag i wybierz "Parent tag".
+      tags_only_secondary: Brak primary tagów. Oznacz przynajmniej jeden tag jako primary w Admin → Tags aby pojawił się tutaj jako karta.
+      tag_overrides_count: "{count} nadpisań"
+      tag_state_enabled: Włączone
+      tag_state_inherit: Dziedzicz
+      tag_state_disabled: Wyłączone
+      tag_state_groups: Wybrane grupy
+      tag_no_groups: Brak dostępnych grup do wyboru.
+      tag_expand_all: Rozwiń wszystkie
+      tag_collapse_all: Zwiń wszystkie
+      tags_unavailable: Rozszerzenie Tagi musi być zainstalowane i włączone aby skorzystać z uprawnień per tag.
+      tags_empty: Brak tagów. Najpierw utwórz tagi w ustawieniach rozszerzenia Tagi.
+
+      display_when_restricted_label: Co widzą użytkownicy bez prawa do oceniania
+      display_when_restricted_help: Wybierz, co widzą użytkownicy którzy nie mogą oceniać dyskusji (z powodu ograniczeń tag-owych). "Gwiazdki tylko do odczytu" zachowuje widoczną kontrolkę bez możliwości kliknięcia. "Ukryj" całkowicie usuwa widget. "Komunikat" zastępuje go krótką notką.
+      display_when_restricted_readonly: Gwiazdki tylko do odczytu (domyślnie)
+      display_when_restricted_hidden: Ukryj kontrolkę oceny
+      display_when_restricted_message: Pokaż krótki komunikat
     permissions:
       rate_label: Ocenianie tematów
       toggle_label: Włączanie/wyłączanie oceny w tematach
@@ -27,9 +62,11 @@ tryhackx-topic-rating:
       rate_this: Oceń ten temat
       rate_first: Oceń jako pierwszy!
       your_rating: "Twoja ocena:"
+      restricted: Ocenianie nie jest dostępne dla twojej grupy w tym temacie.
 
     rating_count: "Oceny: {count}"
     last_rated: "Last Rate:"
+    rating_restricted_message: Ocenianie nie jest dostępne dla twojej grupy.
 
     controls:
       enable_rating: Włącz ocenę

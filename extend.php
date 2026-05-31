@@ -3,6 +3,7 @@
 use TryHackX\TopicRating\Api\Controller;
 use TryHackX\TopicRating\Api\Resource\RatingResource;
 use TryHackX\TopicRating\Access\RatingPolicy;
+use TryHackX\TopicRating\Listener\CleanupTagConfig;
 use TryHackX\TopicRating\Rating;
 use Flarum\Api\Resource\DiscussionResource;
 use Flarum\Api\Context;
@@ -47,14 +48,31 @@ return [
             Schema\Boolean::make('canRateRequiresActivation')
                 ->get(function (Discussion $discussion, Context $context) {
                     $actor = $context->getActor();
-                    if ($actor->id && !$actor->is_email_confirmed
-                        && !$actor->can('rate', $discussion)
-                        && !$discussion->rating_disabled
+                    if (! $actor->id || $actor->is_email_confirmed
+                        || $actor->can('rate', $discussion)
+                        || $discussion->rating_disabled
                     ) {
-                        $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-                        return !(bool) $settings->get('tryhackx-topic-rating.allow_unactivated', false);
+                        return false;
                     }
-                    return false;
+                    $policy = resolve(\TryHackX\TopicRating\Access\RatingPolicy::class);
+                    if ($policy->actorBypassesGlobal($actor)) {
+                        return false;
+                    }
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    return ! (bool) $settings->get('tryhackx-topic-rating.allow_unactivated', false);
+                }),
+            Schema\Str::make('ratingDisplayMode')
+                ->get(function (Discussion $discussion, Context $context) {
+                    $actor = $context->getActor();
+                    if ($actor->can('rate', $discussion)) {
+                        return 'rate';
+                    }
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $mode = (string) $settings->get('tryhackx-topic-rating.display_when_restricted', 'readonly');
+                    if (! in_array($mode, ['readonly', 'hidden', 'message'], true)) {
+                        $mode = 'readonly';
+                    }
+                    return $mode;
                 }),
             Schema\Boolean::make('canToggleRating')
                 ->get(fn (Discussion $discussion, Context $context) =>
@@ -82,18 +100,30 @@ return [
         ->delete('/discussion-ratings', 'discussion-ratings.delete', Controller\DeleteRatingController::class)
         ->post('/discussions/{id}/toggle-rating', 'discussions.toggle-rating', Controller\ToggleRatingController::class)
         ->post('/discussions/{id}/reset-ratings', 'discussions.reset-ratings', Controller\ResetRatingsController::class)
-        ->get('/discussion-ratings/poll', 'discussion-ratings.poll', Controller\PollRatingController::class),
+        ->get('/discussion-ratings/poll', 'discussion-ratings.poll', Controller\PollRatingController::class)
+        ->get('/tryhackx-topic-rating/tag-config', 'tryhackx-topic-rating.tag-config', Controller\GetTagConfigController::class),
 
     (new Extend\Policy())
         ->modelPolicy(Discussion::class, RatingPolicy::class),
+
+    // Orphan-cleanup: drop tag_config entries when a tag is deleted from
+    // flarum/tags. The listener is class-resolved, so it costs nothing
+    // when flarum-tags isn't installed (event class simply never fires).
+    (new Extend\Event())
+        ->listen(\Flarum\Tags\Event\Deleting::class, CleanupTagConfig::class),
 
     (new Extend\Settings())
         ->serializeToForum('tryhackxTopicRatingEnabled', 'tryhackx-topic-rating.enabled', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingAllowUnactivated', 'tryhackx-topic-rating.allow_unactivated', 'boolval', false)
         ->serializeToForum('tryhackxTopicRatingShowOnList', 'tryhackx-topic-rating.show_on_list', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingRateOnList', 'tryhackx-topic-rating.rate_on_list', 'boolval', true)
+        ->serializeToForum('tryhackxTopicRatingDisplayWhenRestricted', 'tryhackx-topic-rating.display_when_restricted', 'strval', 'readonly')
+        ->serializeToForum('tryhackxTopicRatingBypassGroups', 'tryhackx-topic-rating.bypass_groups', 'strval', '["1"]')
         ->default('tryhackx-topic-rating.enabled', true)
         ->default('tryhackx-topic-rating.allow_unactivated', false)
         ->default('tryhackx-topic-rating.show_on_list', true)
-        ->default('tryhackx-topic-rating.rate_on_list', true),
+        ->default('tryhackx-topic-rating.rate_on_list', true)
+        ->default('tryhackx-topic-rating.tag_config', '{}')
+        ->default('tryhackx-topic-rating.display_when_restricted', 'readonly')
+        ->default('tryhackx-topic-rating.bypass_groups', '["1"]'),
 ];

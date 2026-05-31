@@ -7,6 +7,7 @@ Discussion.prototype.lastRatedAt = Model.attribute('lastRatedAt', Model.transfor
 Discussion.prototype.ratingDisabled = Model.attribute('ratingDisabled');
 Discussion.prototype.canRate = Model.attribute('canRate');
 Discussion.prototype.canRateRequiresActivation = Model.attribute('canRateRequiresActivation');
+Discussion.prototype.ratingDisplayMode = Model.attribute('ratingDisplayMode');
 Discussion.prototype.canToggleRating = Model.attribute('canToggleRating');
 Discussion.prototype.canResetRatings = Model.attribute('canResetRatings');
 Discussion.prototype.userRating = Model.attribute('userRating');
