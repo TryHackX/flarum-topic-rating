@@ -52,19 +52,19 @@ fine-grained admin / permission controls.
 
 ## Screenshots
 
-![Mobile view of the discussion list across multiple TryHackX layout combinations](https://github.com/TryHackX/flarum-topic-rating/blob/main/assets/ALL_MOBILE.png?raw=true)
+![Mobile view of the discussion list across multiple TryHackX layout combinations](assets/ALL_MOBILE.png)
 
 *Mobile view — discussion list rendered with different combinations of TryHackX extensions (thumbnails + ratings + views, thumbnails + views, thumbnails only, ratings only, views only, vanilla Flarum).*
 
-![Topic Rating admin settings — list visibility / interactivity, unactivated accounts and permissions](https://github.com/TryHackX/flarum-topic-rating/blob/main/assets/Topic_Rating.png?raw=true)
+![Topic Rating admin panel — per-tag permission tree, bypass-group picker and display-mode selector](assets/Topic_Rating.png)
 
-*Topic Rating admin panel — master switch, *Show rating in discussion list*, *Allow rating from the discussion list*, *Allow unactivated accounts to rate*, plus the *Rate discussions* / *Enable/Disable rating* / *Reset all ratings* permission rows.*
+*Topic Rating admin panel (2.1) — base toggles at the top (*Enable*, *Show on list*, *Allow rating from list*, *Allow unactivated*), then the per-tag permission tree (card-grid of primary tags with their secondary-tag override sections), the *What to show users without rating permission* picker, the bypass-group picker, and the *Rate / Enable-Disable / Reset* permission rows at the bottom.*
 
-![Desktop discussion list with the full TryHackX stack — thumbnail sliders, star ratings and the magnet button](https://github.com/TryHackX/flarum-topic-rating/blob/main/assets/ALL_VIA_MAGNETS.png?raw=true)
+![Desktop discussion list with the full TryHackX stack — thumbnail sliders, star ratings and the magnet button](assets/ALL_VIA_MAGNETS.png)
 
 *Desktop discussion list with the full TryHackX stack — star ratings sit in the right-hand meta column next to thumbnail sliders and the magnet button, click-to-rate and hover preview both active.*
 
-![Desktop discussion list — magnet tooltip mid-load on a topic](https://github.com/TryHackX/flarum-topic-rating/blob/main/assets/ALL_VIA_MAGNETS_v2.png?raw=true)
+![Desktop discussion list — magnet tooltip mid-load on a topic](assets/ALL_VIA_MAGNETS_v2.png)
 
 *Desktop discussion list — hover state showing the magnet tooltip loading inline alongside the interactive star ratings.*
 

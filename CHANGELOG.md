@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-05-31
+
+### Fixed
+- README screenshots now load from the local `assets/` folder
+  (relative paths) instead of GitHub raw URLs. This means they render
+  correctly on `composer require` installs that mirror the package to
+  their own infrastructure, and they keep working offline.
+- Updated the `Topic_Rating.png` caption to reflect the 2.1 admin
+  panel (per-tag permission tree, bypass-group picker, display-mode
+  selector).
+
+> No code changes versus 2.1.0 — same migrations, same PHP/JS bundles,
+> same API surface. Pure docs/asset reference fix.
+
 ## [2.1.0] - 2026-05-31
 
 > Major feature release: **per-tag rating permissions** with a dedicated
