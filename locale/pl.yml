@@ -44,6 +44,21 @@ tryhackx-topic-rating:
       display_when_restricted_readonly: Gwiazdki tylko do odczytu (domyślnie)
       display_when_restricted_hidden: Ukryj kontrolkę oceny
       display_when_restricted_message: Pokaż krótki komunikat
+
+      list_display_heading: Wyświetlanie oceny na liście tematów
+      list_style_desktop_label: Styl wyświetlania — desktop
+      list_style_mobile_label: Styl wyświetlania — mobilny
+      list_style_help: Jak ocena pojawia się na liście tematów (stronie głównej), wybierane osobno dla każdego urządzenia. Style kompaktowe oraz za tytułem są tylko do wyświetlania — nie pozwalają oceniać z listy.
+      list_style_full_meta: "Pełne gwiazdki — w oryginalnym miejscu (nad wyświetleniami / odpowiedziami)"
+      list_style_single_filled_meta: "Jedna gwiazdka + ocena, np. ★4.6 — w oryginalnym miejscu"
+      list_style_single_bucket_meta: "Jedna gwiazdka (pusta / pół / pełna) + ocena — w oryginalnym miejscu"
+      list_style_full_title: "Pełne gwiazdki — za tytułem"
+      list_style_single_filled_title: "Jedna gwiazdka + ocena, np. ★4.6 — za tytułem"
+      list_style_single_bucket_title: "Jedna gwiazdka (pusta / pół / pełna) + ocena — za tytułem"
+      single_clickable_label: Pojedyncza gwiazdka klikalna
+      single_clickable_help: Gdy włączone, kliknięcie pojedynczej gwiazdki (wraz z liczbą) otwiera listę ocen w oknie modalnym. Gdy wyłączone, gwiazdka jest tylko do wyświetlania — a tematy bez żadnej oceny nie pokazują nic.
+      single_modal_rate_label: Pozwól oceniać w oknie modalnym
+      single_modal_rate_help: Pokaż interaktywną kontrolkę oceny na górze okna modalnego z ocenami, aby użytkownicy mogli ocenić (lub zmienić ocenę) bez opuszczania listy.
     permissions:
       rate_label: Ocenianie tematów
       toggle_label: Włączanie/wyłączanie oceny w tematach
@@ -85,3 +100,25 @@ tryhackx-topic-rating:
       empty: Brak ocen.
       deleted_user: "[usunięty]"
       updated_prefix: "zmieniono "
+      rate_label: "Twoja ocena:"
+
+# Wspólna sekcja awatarów, używana przez flarum-topic-rating i flarum-thumb-sliders.
+# Tłumaczenia są globalne, więc te klucze są dostępne także na stronie ustawień
+# Thumb Sliders, gdy oba rozszerzenia są zainstalowane.
+tryhackx-avatars:
+  admin:
+    title: "Awatary na liście tematów"
+    help: "Wybierz jak zachowuje się awatar autora na liście tematów, osobno dla desktopu i wersji mobilnej. To ustawienie współdzielone — zmiana tutaj zmienia je także w Thumb Sliders / Topic Rating, zależnie od tego co masz zainstalowane."
+    thumbs_inactive: "Thumb Sliders nie jest aktywne, więc nie ma miniatury, którą można zastąpić awatar. Opcje \"zastąp\" poniżej działają jak \"Pokaż awatar\" — użyj \"Ukryj awatar\", aby usunąć awatary (np. dla lżejszej listy na telefonie)."
+    save_error: "Nie udało się zapisać ustawienia awatara. Spróbuj ponownie."
+    device_desktop: "Desktop"
+    device_mobile: "Mobilny"
+    mode_show: "Pokaż awatar"
+    mode_with_image: "Zastąp miniaturą, gdy temat ma obraz"
+    mode_always: "Zawsze zastępuj miniaturą"
+    mode_hide: "Ukryj awatar"
+    hint_show: "Awatar autora jest zawsze pokazywany."
+    hint_hide: "Awatar nigdy nie jest pokazywany. Jeśli dostępna jest miniatura, zajmuje jego miejsce; w przeciwnym razie wiersz po prostu nie ma awatara."
+    hint_with_image: "Miniatura zastępuje awatar tylko gdy temat ma prawdziwy obraz; w przeciwnym razie pokazywany jest awatar."
+    hint_always: "Miniatura (lub skonfigurowany zamiennik) zawsze zastępuje awatar; tematy bez żadnej miniatury zachowują awatar."
+    hint_replace_no_thumbs: "Thumb Sliders jest nieaktywne, więc awatar jest pokazywany jak zwykle. Zainstaluj/włącz Thumb Sliders, aby zastąpić go miniaturą, albo wybierz \"Ukryj awatar\"."

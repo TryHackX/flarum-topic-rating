@@ -1,6 +1,7 @@
 import Modal from 'flarum/common/components/Modal';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import app from 'flarum/forum/app';
+import StarRating from './StarRating';
 
 export default class RatingsModal extends Modal {
     oninit(vnode) {
@@ -11,7 +12,9 @@ export default class RatingsModal extends Modal {
         this.moreResults = false;
         this.offset = 0;
         this.limit = 10;
-        this.total = 0;
+        // Seed from the discussion's own count so the title never shows
+        // "undefined" before the list (and its meta) has loaded.
+        this.total = this.discussion.ratingCount() || 0;
         this.pollInterval = null;
         this.lastPollTime = new Date().toISOString();
 
@@ -29,14 +32,43 @@ export default class RatingsModal extends Modal {
     }
 
     title() {
-        return app.translator.trans('tryhackx-topic-rating.forum.ratings_modal.title', {
-            count: this.total,
-        });
+        // Guard against an undefined/NaN total (e.g. when the API response has
+        // no `meta.total`) so the heading never renders "Ratings ({undefined})".
+        const count = (typeof this.total === 'number' && !isNaN(this.total))
+            ? this.total
+            : (this.discussion.ratingCount() || 0);
+
+        return app.translator.trans('tryhackx-topic-rating.forum.ratings_modal.title', { count });
+    }
+
+    // Optional in-modal rating control (admin opt-in via single_modal_rate).
+    // Only shown when the viewer can actually rate this discussion.
+    renderRateControl() {
+        if (app.forum.attribute('tryhackxTopicRatingSingleModalRate') !== true) return null;
+
+        const d = this.discussion;
+        if (!d || d.ratingDisabled()) return null;
+
+        const mode = (d.ratingDisplayMode && d.ratingDisplayMode()) || 'rate';
+        if (mode !== 'rate' || !d.canRate()) return null;
+
+        return (
+            <div className="RatingsModal-rate">
+                <StarRating
+                    discussion={d}
+                    interactive={true}
+                    size="normal"
+                    showCount={false}
+                    onrated={() => { this.offset = 0; this.loadRatings(); }}
+                />
+            </div>
+        );
     }
 
     content() {
         return (
             <div className="Modal-body">
+                {this.renderRateControl()}
                 <div className="RatingsModal-list" oncreate={this.setupScroll.bind(this)}>
                     {this.ratings.map((rating) => this.renderRatingItem(rating))}
                     {this.loading && <LoadingIndicator />}
@@ -164,7 +196,10 @@ export default class RatingsModal extends Modal {
         .then((response) => {
             const newRatings = this.parseRatings(response);
             this.ratings = this.offset === 0 ? newRatings : [...this.ratings, ...newRatings];
-            this.total = response.meta ? response.meta.total : this.ratings.length;
+            const metaTotal = response.meta && response.meta.total;
+            this.total = (typeof metaTotal === 'number')
+                ? metaTotal
+                : (this.discussion.ratingCount() || this.ratings.length);
             this.moreResults = newRatings.length >= this.limit;
             this.loading = false;
             m.redraw();

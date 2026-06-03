@@ -11,6 +11,25 @@ use Flarum\Api\Schema;
 use Flarum\Discussion\Discussion;
 use Flarum\Extend;
 
+// Shared avatar-display mode, coordinated with flarum-thumb-sliders. Both
+// extensions serialize the same neutral `tryhackx-avatars.*` keys so the value
+// is shared whether one or both are installed. Defaults are baked in here
+// (NOT ->default(), which throws when both extensions register the same key);
+// the duplicate serializer is safe because ForumResource fields are keyed by
+// attribute name (last-wins) and both extensions yield the identical value.
+$normalizeAvatarMode = function ($value) {
+    $v = is_string($value) ? $value : '';
+
+    return in_array($v, ['show', 'with_image', 'always', 'hide'], true) ? $v : 'show';
+};
+
+$normalizeListStyle = function ($value) {
+    $v = is_string($value) ? $value : '';
+    $allowed = ['full_meta', 'full_title', 'single_filled_meta', 'single_filled_title', 'single_bucket_meta', 'single_bucket_title'];
+
+    return in_array($v, $allowed, true) ? $v : 'full_meta';
+};
+
 return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
@@ -119,11 +138,25 @@ return [
         ->serializeToForum('tryhackxTopicRatingRateOnList', 'tryhackx-topic-rating.rate_on_list', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingDisplayWhenRestricted', 'tryhackx-topic-rating.display_when_restricted', 'strval', 'readonly')
         ->serializeToForum('tryhackxTopicRatingBypassGroups', 'tryhackx-topic-rating.bypass_groups', 'strval', '["1"]')
+        // Discussion-list rating display style, separately for desktop and mobile.
+        ->serializeToForum('tryhackxTopicRatingListStyleDesktop', 'tryhackx-topic-rating.list_style_desktop', $normalizeListStyle)
+        ->serializeToForum('tryhackxTopicRatingListStyleMobile', 'tryhackx-topic-rating.list_style_mobile', $normalizeListStyle)
+        // Single-star (compact) behaviour: whether the star is clickable to open
+        // the ratings modal, and whether that modal lets the user rate.
+        ->serializeToForum('tryhackxTopicRatingSingleClickable', 'tryhackx-topic-rating.single_clickable', 'boolval', true)
+        ->serializeToForum('tryhackxTopicRatingSingleModalRate', 'tryhackx-topic-rating.single_modal_rate', 'boolval', false)
+        // Shared avatar-display mode (see note at top of file). No ->default().
+        ->serializeToForum('tryhackxAvatarModeDesktop', 'tryhackx-avatars.mode_desktop', $normalizeAvatarMode)
+        ->serializeToForum('tryhackxAvatarModeMobile', 'tryhackx-avatars.mode_mobile', $normalizeAvatarMode)
         ->default('tryhackx-topic-rating.enabled', true)
         ->default('tryhackx-topic-rating.allow_unactivated', false)
         ->default('tryhackx-topic-rating.show_on_list', true)
         ->default('tryhackx-topic-rating.rate_on_list', true)
         ->default('tryhackx-topic-rating.tag_config', '{}')
         ->default('tryhackx-topic-rating.display_when_restricted', 'readonly')
-        ->default('tryhackx-topic-rating.bypass_groups', '["1"]'),
+        ->default('tryhackx-topic-rating.bypass_groups', '["1"]')
+        ->default('tryhackx-topic-rating.list_style_desktop', 'full_meta')
+        ->default('tryhackx-topic-rating.list_style_mobile', 'full_meta')
+        ->default('tryhackx-topic-rating.single_clickable', true)
+        ->default('tryhackx-topic-rating.single_modal_rate', false),
 ];

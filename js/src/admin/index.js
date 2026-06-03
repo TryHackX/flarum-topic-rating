@@ -5,6 +5,8 @@ import FormGroup from 'flarum/common/components/FormGroup';
 import SupportModal from './components/SupportModal';
 import TagPermissionTree from './components/TagPermissionTree';
 import BypassGroupPicker from './components/BypassGroupPicker';
+import AvatarSettings from './components/AvatarSettings';
+import RatingListDisplaySettings from './components/RatingListDisplaySettings';
 
 // Add Flarum's standard `Button--inverted` to the Cancel button in core's
 // "Reset extension settings" modal so it doesn't render as a plain
@@ -86,7 +88,11 @@ const adminExtender = new Extend.Admin()
         label: app.translator.trans('tryhackx-topic-rating.admin.settings.allow_unactivated_label', {}, true),
         help: app.translator.trans('tryhackx-topic-rating.admin.settings.allow_unactivated_help', {}, true),
         type: 'boolean',
-    }));
+    }))
+    // Per-device rating display style + cascading single-star options.
+    .customSetting(() => m(RatingListDisplaySettings))
+    // Shared avatar section (also present in Thumb Sliders; same setting keys).
+    .customSetting(() => m(AvatarSettings));
 
 if (tagsOn) {
     adminExtender

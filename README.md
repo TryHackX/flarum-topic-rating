@@ -5,13 +5,14 @@ discussions with half-star precision — usable from **the discussion page
 *and* the discussion list**, with a live hover preview, polling refresh, and
 fine-grained admin / permission controls.
 
-> **Latest (2.1.0):** Per-tag rating permissions. When the bundled
-> `flarum/tags` extension is enabled, you get a card-grid admin tree that
-> lets you set rating to *Enabled / Disabled / Allow groups* per primary
-> tag, with secondary tags individually overridable per primary
-> (*Inherit / Enabled / Disabled / Allow groups*). A separate
-> bypass-group picker decides who can rate restricted tags anyway —
-> with the Admin group included by default but deselectable for testing.
+> **Latest (2.2.0):** Pick **how the rating looks on the discussion list** —
+> six per-device styles (full stars, a single star + numeric score, or a graded
+> empty/half/full star, either *in place* above views/replies or *appended to
+> the title*). Make the compact single star **clickable** to open the ratings
+> list, with an optional **rate-from-the-modal** control. And manage the author
+> **avatar** (*Show* / *Replace with thumbnail* / **Hide**) from a new
+> **shared** Desktop/Mobile section that stays in sync with
+> `flarum-thumb-sliders`. See the [changelog](CHANGELOG.md) for the full list.
 
 > **Note:** Recent updates target the **2.x** line only. The **1.x** branch
 > (Flarum 1.8+) is **no longer actively developed** — it stays available
@@ -30,8 +31,20 @@ fine-grained admin / permission controls.
   where Flarum blocks Mithril redraws.
 - **Real-time updates** — short-poll on the discussion page keeps the
   average and "your rating" tooltip current without reloading.
-- **Ratings modal** — click the count to see who rated, what they gave,
-  and when they last changed it.
+- **Per-device list display styles** — choose, separately for desktop and
+  mobile, how the rating renders on the list: the full 5-star range, a single
+  star + numeric score (e.g. `★4.6`), or a single *graded* star
+  (empty/half/full by score) — each either *in place* (the meta column above
+  views/replies) or *appended to the discussion title*.
+- **Clickable single star + in-modal rating** — make the compact single star
+  open the ratings modal, and optionally add an interactive rating control at
+  the top of that modal so people can rate without leaving the list.
+- **Ratings modal** — click the count (or the single star) to see who rated,
+  what they gave, and when they last changed it.
+- **Shared avatar control** *(synced with `flarum-thumb-sliders`)* — a
+  Desktop/Mobile section to *Show* the author avatar, *Replace* it with the
+  topic thumbnail, or **Hide** it entirely for a lighter list. The same setting
+  appears in both extensions and changing it in one updates the other.
 - **Moderator controls** — toggle rating on/off per topic, reset all
   ratings on a topic.
 - **Per-tag rating permissions** *(requires `flarum/tags`)* — card-grid
@@ -105,12 +118,18 @@ Enable the extension in **Admin Panel → Extensions → Topic Rating**.
 | **Enable Topic Rating** | On | Master switch for the extension. |
 | **Allow unactivated accounts to rate** | Off | Users without email confirmation can submit ratings. |
 | **Show rating in discussion list** | On | Visibility toggle for the stars on the homepage list. When off, ratings stay on the discussion page. |
-| **Allow rating from the discussion list** | On | Make the list stars interactive (click + hover preview). When off, the list shows the rating read-only. |
+| **Allow rating from the discussion list** | On | Make the *full-stars-in-place* list stars interactive (click + hover preview). When off, the list shows the rating read-only. |
+| **Display style — desktop** / **— mobile** | Full stars — in place | How the rating renders on the list, **per device**: *full stars* / *one star + score* / *one graded star (empty-half-full) + score*, each either *in place* (meta column) or *after the title*. Compact & after-title styles are display-only. |
+| **Make the single star clickable** ² | On | Clicking the single star + number opens the ratings modal (even after the title). Off = display-only, and topics with **no** rating show no star at all. |
+| **Allow rating inside the modal** ² | Off | Adds an interactive rating control at the top of the ratings modal, so users can rate without leaving the list. |
+| **Avatars — Desktop** / **Mobile** ³ | Show avatar | Per device: *Show* / *Replace with thumbnail when the topic has an image* / *Always replace* / *Hide avatar*. |
 | **Per-tag rating permissions** ¹ | empty / all enabled | Card-grid tree. Per-primary-tag state (*Enabled / Disabled / Allow groups*), per-(primary × secondary) override (*Inherit* by default). |
 | **Bypass tag restrictions** ¹ | Admin group | Groups whose members can rate even where a tag is *Disabled* or *Allow groups*. Empty = nobody bypasses. |
 | **What to show users without rating permission** ¹ | Read-only stars | One of: *Read-only stars* (default), *Hidden*, *Message*. |
 
 ¹ Visible only when `flarum/tags` is enabled.
+² Visible only when a single-star *Display style* is selected (the modal-rate toggle appears only when "Make the single star clickable" is on).
+³ **Shared** setting — the same Desktop/Mobile avatar section appears in the `flarum-thumb-sliders` admin, and changing it in either extension updates the other. The *Replace* modes only take effect when Thumb Sliders is installed and showing a thumbnail; *Hide* works regardless.
 
 ### Per-tag permissions — how the policy decides
 

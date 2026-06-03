@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-06-03
+
+> Big feature release: pick **how the rating looks on the discussion list**
+> (six per-device display styles), make the compact single star **clickable**
+> with an optional **rate-from-the-modal** control, and manage the author
+> **avatar** from a new **shared** Desktop/Mobile section that stays in sync
+> with `flarum-thumb-sliders`. Plus a batch of ratings-modal fixes. No breaking
+> changes, and **no new migrations in this extension** — the shared avatar
+> keys default safely on their own.
+
+### Added
+- **Per-device discussion-list rating styles.** New settings *Display style —
+  desktop* (`list_style_desktop`) and *Display style — mobile*
+  (`list_style_mobile`), each one of six styles:
+  - *Full stars — in place* (the original meta column, above views / replies —
+    **default, unchanged**);
+  - *One star + score* (e.g. `★4.6`) *— in place*;
+  - *One star (empty / half / full by score) + score — in place*;
+  - *Full stars — after the title*;
+  - *One star + score — after the title*;
+  - *One star (empty / half / full) + score — after the title*.
+  Graded-star buckets use the 0–10 scale: empty `0–3.33`, half `3.33–6.67`,
+  full `>6.67` (10 = 5.0). Compact and after-title styles are **display-only**.
+  Serialized as `tryhackxTopicRatingListStyleDesktop` / `…Mobile`.
+- **Clickable single star + in-modal rating** (cascading admin toggles, shown
+  only when a single-star style is selected on either device):
+  - *Make the single star clickable* (`single_clickable`, default **on**) —
+    the whole star + number opens the ratings modal (even after the title,
+    where the click is captured so it doesn't follow the title link). When
+    **off**, the star is display-only and topics with no rating yet show
+    nothing at all.
+  - *Allow rating inside the modal* (`single_modal_rate`, default **off**) —
+    adds an interactive, centred rating control at the top of the ratings
+    modal so users can rate (or change their rating) without leaving the list.
+  Serialized as `tryhackxTopicRatingSingleClickable` /
+  `tryhackxTopicRatingSingleModalRate`.
+- **Shared avatar section — Desktop & Mobile** (also present in the
+  `flarum-thumb-sliders` admin; same underlying setting). Per device choose
+  *Show avatar* / *Replace with thumbnail when the topic has an image* /
+  *Always replace with thumbnail* / **Hide avatar**. The new **Hide** mode
+  drops the avatar entirely for a lighter list (handy on mobile) and works
+  even without thumbnails. Both extensions write the **same** neutral
+  `tryhackx-avatars.mode_desktop` / `…_mobile` keys (serialized as
+  `tryhackxAvatarModeDesktop` / `…Mobile`), so changing it in one is reflected
+  in the other. The "replace" modes self-detect Thumb Sliders — with it absent
+  they behave as *Show*.
+
+### Changed
+- **Shared discussion-list layout module → `LAYOUT_VERSION = 5`**
+  (byte-identical with `flarum-thumb-sliders`). It now resolves the per-device
+  avatar mode and the rating placement (meta column vs end of the title), and
+  still re-flows on the phone-breakpoint flip.
+- **Ratings modal** restyle: the row separator is darkened to `#3c3c41`, and
+  the optional in-modal rate control is centred with no label.
+- **Admin selects** (rating-style + avatar) now render at their natural width
+  instead of stretching edge-to-edge, and clip long labels with an ellipsis
+  (`max-width: 100%`) so they never overflow on narrow / mobile widths — the
+  full label still shows when the native picker opens.
+
+### Fixed
+- **Ratings modal title showed `Ratings ({undefined})`** when the list
+  response had no `meta.total`. The count now falls back to the discussion's
+  own `ratingCount`, so the heading is always correct — on the list *and* the
+  discussion page.
+- **Compact single empty star** rendered in a washed-out grey/white; it now
+  uses the star colour (yellow) to match the half / full states.
+
 ## [2.1.2] - 2026-06-01
 
 > Discussion-list layout polish for the shared restructured layout

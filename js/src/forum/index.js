@@ -14,6 +14,10 @@ import ResetRatingsModal from './components/ResetRatingsModal';
 import installDiscussionListLayout from './discussionListLayout';
 import '../common/extend';
 
+// Must mirror the @phone breakpoint used by discussionListLayout.js so the
+// variant chosen here and the placement chosen there agree on the device.
+const PHONE_QUERY = '(max-width: 767.98px)';
+
 app.initializers.add('tryhackx-topic-rating', () => {
     app.store.models['discussion-ratings'] = Rating;
 
@@ -45,12 +49,48 @@ app.initializers.add('tryhackx-topic-rating', () => {
         if (!discussion || discussion.ratingDisabled()) return;
         if (discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden') return;
 
+        // Resolve the per-device display style. discussionListLayout.js reads the
+        // SAME attributes to decide placement (meta column vs end of the title);
+        // here we only derive the visual variant and whether rating-from-list
+        // stays interactive. isPhone is computed exactly as the layout does it.
+        const isPhone = window.matchMedia(PHONE_QUERY).matches;
+        const style = (isPhone
+            ? app.forum.attribute('tryhackxTopicRatingListStyleMobile')
+            : app.forum.attribute('tryhackxTopicRatingListStyleDesktop')) || 'full_meta';
+
+        let variant = 'full';
+        if (style.indexOf('single_bucket') === 0) variant = 'single_bucket';
+        else if (style.indexOf('single_filled') === 0) variant = 'single_filled';
+
+        const afterTitle = /_title$/.test(style);
+        const isCompact = variant !== 'full';
+
+        // Single-star (compact) clickability is an admin toggle. When on, the
+        // whole star + number opens the ratings modal — even after the title,
+        // where StarRating captures the click so it doesn't navigate the link.
+        const singleClickable = app.forum.attribute('tryhackxTopicRatingSingleClickable') !== false;
+        const compactClickable = isCompact && singleClickable;
+        const count = discussion.ratingCount() || 0;
+
+        // Per request: when the single star is NOT clickable, don't render a lone
+        // star on topics that have no rating at all.
+        if (isCompact && !compactClickable && count === 0) return;
+
+        // Click-to-rate only survives for the full stars in the meta column. The
+        // compact and after-title styles are display-only (after-title also sits
+        // inside the title link, so its clicks must fall through to navigation).
+        const interactive = variant === 'full' && !afterTitle
+            && app.forum.attribute('tryhackxTopicRatingRateOnList') !== false;
+
         items.add('rating',
             <StarRating
                 discussion={discussion}
-                interactive={app.forum.attribute('tryhackxTopicRatingRateOnList') !== false}
+                interactive={interactive}
                 size="small"
+                variant={variant}
                 showCount={false}
+                tooltip={variant === 'full' && !afterTitle}
+                clickToModal={compactClickable}
             />,
             15
         );

@@ -50,6 +50,13 @@ export default class StarRating extends Component {
         // but be defensive in case this is mounted from elsewhere.
         if (displayMode === 'hidden') return null;
 
+        // Compact discussion-list variants: a single star + the numeric average
+        // (e.g. ★4.6). Display-only — see renderCompact().
+        const variant = this.attrs.variant || 'full';
+        if (variant === 'single_filled' || variant === 'single_bucket') {
+            return this.renderCompact(variant, average, count, discussion);
+        }
+
         // 'message' mode: skip the stars entirely, show a short note.
         if (displayMode === 'message' && !canRate) {
             return (
@@ -82,9 +89,11 @@ export default class StarRating extends Component {
                     >
                         {this.renderStars(displayValue, interactive && canRate && isLoggedIn, discussion)}
                     </div>
-                    <div className="StarRating-tooltip">
-                        {this.renderTooltipContent(userRating, count, isLoggedIn, requiresActivation, canRate, displayMode)}
-                    </div>
+                    {this.attrs.tooltip !== false && (
+                        <div className="StarRating-tooltip">
+                            {this.renderTooltipContent(userRating, count, isLoggedIn, requiresActivation, canRate, displayMode)}
+                        </div>
+                    )}
                 </div>
                 {this.attrs.showCount !== false && (
                     <span
@@ -101,6 +110,52 @@ export default class StarRating extends Component {
                     </span>
                 )}
             </div>
+        );
+    }
+
+    // Compact list display: one star + the numeric average (0–5, one decimal).
+    // `single_filled` always shows a solid star (when rated); `single_bucket`
+    // picks empty / half / full from the 0–10 score (10 == 5.0):
+    //   empty: 0–3.33   half: 3.33–6.67   full: >6.67
+    // Display-only. When placed in the meta column (clickToModal) a click opens
+    // the ratings list; after the title it sits inside the title link instead.
+    renderCompact(variant, average, count, discussion) {
+        const size = this.attrs.size || 'normal';
+        const value10 = (average || 0) * 2;
+        const hasRatings = count > 0;
+
+        let starClass;
+        if (!hasRatings) {
+            starClass = 'far fa-star StarRating-compactStar--empty';
+        } else if (variant === 'single_bucket') {
+            if (value10 < 3.33) starClass = 'far fa-star StarRating-compactStar--empty';
+            else if (value10 < 6.67) starClass = 'fas fa-star-half-alt StarRating-compactStar--half';
+            else starClass = 'fas fa-star StarRating-compactStar--full';
+        } else {
+            starClass = 'fas fa-star StarRating-compactStar--full';
+        }
+
+        // Clickability follows the admin toggle (passed as clickToModal). When on,
+        // even an unrated star opens the modal (useful with in-modal rating); when
+        // off, forum/index.js has already hidden unrated stars entirely.
+        const clickable = !!this.attrs.clickToModal;
+        const title = hasRatings
+            ? app.translator.trans('tryhackx-topic-rating.forum.rating_count', { count })
+            : app.translator.trans('tryhackx-topic-rating.forum.tooltip.rate_first');
+
+        return (
+            <span
+                className={'StarRating StarRating--compact StarRating--' + size + ' StarRating--' + variant + (clickable ? ' StarRating--compactClickable' : '')}
+                title={title}
+                onclick={clickable ? (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    this.showRatingsModal(discussion);
+                } : undefined}
+            >
+                <i className={'StarRating-compactStar ' + starClass}></i>
+                {hasRatings ? <span className="StarRating-compactValue">{average.toFixed(1)}</span> : null}
+            </span>
         );
     }
 
@@ -255,6 +310,8 @@ export default class StarRating extends Component {
                 },
             });
             m.redraw();
+            // Let an embedding view (e.g. the ratings modal) react to the change.
+            if (typeof this.attrs.onrated === 'function') this.attrs.onrated();
         });
     }
 

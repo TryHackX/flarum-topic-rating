@@ -430,11 +430,32 @@
     display: flex;
     align-items: center;
     padding: 10px 15px;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid #3c3c41;
 
     &:last-child {
         border-bottom: none;
     }
+}
+
+// Optional in-modal rating control (single_modal_rate). Sits above the list,
+// centred (label removed — the stars speak for themselves).
+.RatingsModal-rate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 15px;
+    border-bottom: 1px solid #3c3c41;
+}
+
+// The base .StarRating is a centred column; keep it a tidy single row here.
+.RatingsModal-rate .StarRating {
+    flex-direction: row;
+    line-height: 1;
+}
+
+.RatingsModal-rate .StarRating-starsWrap {
+    display: flex;
+    align-items: center;
 }
 
 .RatingsModal-item-avatar {
@@ -610,4 +631,79 @@
 .StarRating-restrictedIcon {
     font-size: 10px;
     opacity: 0.7;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// COMPACT LIST RATING (single star + numeric average)
+// Used by the single_filled_* / single_bucket_* discussion-list styles.
+// Inline so it drops naturally into the right meta column or after the title.
+// ─────────────────────────────────────────────────────────────────────
+.StarRating--compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: middle;
+
+    // All states use the star colour — including the empty (outline) star, so a
+    // single hollow star reads as yellow rather than a washed-out grey/white.
+    .StarRating-compactStar {
+        font-size: 1em;
+
+        &--full { color: @star-color; }
+        &--half { color: @star-color; }
+        &--empty { color: @star-color; }
+    }
+
+    .StarRating-compactValue {
+        font-size: 0.92em;
+        font-weight: 600;
+        color: var(--muted-color, #888);
+    }
+
+    // Whole unit (star + number) is one click target and reacts together.
+    &.StarRating--compactClickable {
+        cursor: pointer;
+
+        &:hover .StarRating-compactStar,
+        &:hover .StarRating-compactValue { color: @star-hover-color; }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// RATING APPENDED TO THE END OF THE TITLE (the *_title styles)
+// Rendered inside the title <h2> (itself inside the title Link), so glyphs
+// inherit the link reset; we only add spacing and keep them modestly sized
+// next to the larger title text. Markup comes from discussionListLayout.js.
+// ─────────────────────────────────────────────────────────────────────
+.DiscussionListItem-titleRating {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-weight: normal;
+    font-size: 13px;
+
+    .StarRating {
+        flex-direction: row;
+    }
+
+    // Full-stars-after-title variant: keep the row of stars compact.
+    .StarRating-star {
+        font-size: 1em;
+        width: 1.05em;
+        height: 1.05em;
+    }
+
+    .StarRating-compactValue {
+        font-size: 0.95em;
+    }
+}
+
+@media @phone {
+    .DiscussionListItem-titleRating {
+        margin-left: 6px;
+        font-size: 12px;
+    }
 }
