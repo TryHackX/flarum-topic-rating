@@ -5,14 +5,19 @@ discussions with half-star precision — usable from **the discussion page
 *and* the discussion list**, with a live hover preview, polling refresh, and
 fine-grained admin / permission controls.
 
-> **Latest (2.2.0):** Pick **how the rating looks on the discussion list** —
-> six per-device styles (full stars, a single star + numeric score, or a graded
-> empty/half/full star, either *in place* above views/replies or *appended to
-> the title*). Make the compact single star **clickable** to open the ratings
-> list, with an optional **rate-from-the-modal** control. And manage the author
-> **avatar** (*Show* / *Replace with thumbnail* / **Hide**) from a new
-> **shared** Desktop/Mobile section that stays in sync with
-> `flarum-thumb-sliders`. See the [changelog](CHANGELOG.md) for the full list.
+> **Latest (2.3.0):** Finer **per-tag control** — a dedicated list for
+> **standalone secondary tags** (topics with no primary tag; opt-in, default
+> off), a switch for **tagless** discussions, an option to **hide empty stars**
+> from non-voters, and one to **hide "frozen" ratings** on topics that became
+> non-rateable (anti-abuse). The rating moderation items (*Disable Rating* /
+> *Reset All Ratings*) now follow the widget's visibility in the ⋮ menu, with an
+> *always-show* override.
+>
+> **2.2.0:** Per-device discussion-list **display styles** (full stars / single
+> star + score / graded star, *in place* or *after the title*), a **clickable
+> single star** with optional **rate-from-the-modal**, and a **shared** avatar
+> section synced with `flarum-thumb-sliders`. See the
+> [changelog](CHANGELOG.md) for the full list.
 
 > **Note:** Recent updates target the **2.x** line only. The **1.x** branch
 > (Flarum 1.8+) is **no longer actively developed** — it stays available
