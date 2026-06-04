@@ -41,12 +41,23 @@ class RatingPolicy extends AbstractPolicy
         $tagsOn = $this->extensions->isEnabled('flarum-tags');
         $tagConfig = $this->getTagConfig();
 
-        if (! $tagsOn || empty($tagConfig)) {
+        if (! $tagsOn) {
             return $this->legacyDecide($actor, $hasLegacyRate);
         }
 
         $tags = $this->loadDiscussionTags($discussion);
+
+        // Tagless discussions are governed by their own admin switch. When it is
+        // off they can't be rated at all; otherwise they fall back to the legacy
+        // (global Rate permission) decision.
         if ($tags->isEmpty()) {
+            if (! $this->untaggedRatingEnabled()) {
+                return $this->deny();
+            }
+            return $this->legacyDecide($actor, $hasLegacyRate);
+        }
+
+        if (empty($tagConfig)) {
             return $this->legacyDecide($actor, $hasLegacyRate);
         }
 
@@ -89,15 +100,19 @@ class RatingPolicy extends AbstractPolicy
             return true;
         }
 
-        $tagsOn = $this->extensions->isEnabled('flarum-tags');
-        $tagConfig = $this->getTagConfig();
-
-        if (! $tagsOn || empty($tagConfig)) {
+        if (! $this->extensions->isEnabled('flarum-tags')) {
             return false;
         }
 
         $tags = $this->loadDiscussionTags($discussion);
         if ($tags->isEmpty()) {
+            // Tagless discussions: disabled only when the admin switched off
+            // rating for them.
+            return ! $this->untaggedRatingEnabled();
+        }
+
+        $tagConfig = $this->getTagConfig();
+        if (empty($tagConfig)) {
             return false;
         }
 
@@ -110,6 +125,33 @@ class RatingPolicy extends AbstractPolicy
         }
 
         return true;
+    }
+
+    /**
+     * Admin switch: may discussions that carry NO tags at all be rated /
+     * show the rating widget? Default true (legacy behaviour).
+     */
+    public function untaggedRatingEnabled(): bool
+    {
+        return (bool) $this->settings->get('tryhackx-topic-rating.untagged_enabled', true);
+    }
+
+    /**
+     * True when the rating widget should be removed entirely (not just made
+     * read-only) by configuration — currently: a tagless discussion while
+     * "allow rating on untagged discussions" is off. Consumed by the
+     * `ratingDisplayMode` serializer field to return `hidden`.
+     */
+    public function ratingForcedHidden(Discussion $discussion): bool
+    {
+        if (! $this->extensions->isEnabled('flarum-tags')) {
+            return false;
+        }
+        if ($this->untaggedRatingEnabled()) {
+            return false;
+        }
+
+        return $this->loadDiscussionTags($discussion)->isEmpty();
     }
 
     /**
@@ -155,10 +197,14 @@ class RatingPolicy extends AbstractPolicy
                 return [['tag' => null, 'config' => ['state' => 'enabled']]];
             }
             foreach ($secondaryTags as $sTag) {
-                $entry = $tagConfig[(string) $sTag->id] ?? ['state' => 'inherit'];
-                $state = $entry['state'] ?? 'inherit';
+                // Standalone secondary tags (a discussion with NO primary tag)
+                // default to DISABLED — the admin opts specific ones back in via
+                // the "Secondary tags used on their own" list. Only an explicit
+                // `enabled` (stored as a bare key) permits rating.
+                $entry = $tagConfig[(string) $sTag->id] ?? ['state' => 'disabled'];
+                $state = $entry['state'] ?? 'disabled';
                 if ($state === 'inherit') {
-                    $state = 'enabled';
+                    $state = 'disabled';
                 }
                 $entry['state'] = $state;
                 $resolved[] = ['tag' => $sTag, 'config' => $entry];

@@ -72,6 +72,14 @@ app.initializers.add('tryhackx-topic-rating', () => {
         const compactClickable = isCompact && singleClickable;
         const count = discussion.ratingCount() || 0;
 
+        // Admin option: on the discussion list, hide the (empty) widget from
+        // people who can't rate when a topic has no ratings yet. `rate` is the
+        // only display mode where the viewer can rate; anything else = can't.
+        const viewerCanRate = discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'rate';
+        if (count === 0 && !viewerCanRate && app.forum.attribute('tryhackxTopicRatingHideEmptyForNonVoters') === true) {
+            return;
+        }
+
         // Per request: when the single star is NOT clickable, don't render a lone
         // star on topics that have no rating at all.
         if (isCompact && !compactClickable && count === 0) return;
@@ -126,6 +134,17 @@ app.initializers.add('tryhackx-topic-rating', () => {
     });
 
     extend(DiscussionControls, 'moderationControls', function (items, discussion) {
+        // By default the rating moderation items FOLLOW the rating's visibility:
+        // shown when the rating is shown on this topic, hidden when its tags /
+        // untagged config hide it (managing a hidden rating would do nothing).
+        // The "always show" admin setting overrides that. The per-topic moderator
+        // toggle is exempt — so a topic disabled from here can still be re-enabled.
+        const alwaysShow = app.forum.attribute('tryhackxTopicRatingShowModerationControls') === true;
+        if (!alwaysShow) {
+            const mode = discussion.ratingDisplayMode && discussion.ratingDisplayMode();
+            if (mode === 'hidden' && !discussion.ratingDisabled()) return;
+        }
+
         if (discussion.canToggleRating && discussion.canToggleRating()) {
             items.add('toggleRating',
                 Button.component({

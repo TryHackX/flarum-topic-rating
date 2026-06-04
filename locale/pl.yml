@@ -7,8 +7,12 @@ tryhackx-topic-rating:
       show_on_list_help: Wyświetlaj ocenę (gwiazdki) na liście tematów (stronie głównej). Gdy wyłączone, ocena nadal pojawia się na stronie tematu. Domyślnie włączone.
       rate_on_list_label: Pozwól oceniać z listy tematów
       rate_on_list_help: Pozwól użytkownikom oceniać tematy bezpośrednio z listy przez kliknięcie gwiazdek (z podświetleniem przy najechaniu), tak jak na stronie tematu. Gdy wyłączone, lista pokazuje ocenę tylko do odczytu. Domyślnie włączone.
+      hide_empty_for_nonvoters_label: Ukryj puste gwiazdki przed osobami bez prawa do oceny
+      hide_empty_for_nonvoters_help: Na liście tematów, gdy temat nie ma jeszcze ocen, nie renderuj widżetu gwiazdek dla osób, które nie mogą go oceniać (goście, ograniczone grupy). Tematy z istniejącymi ocenami nadal się pokazują. Domyślnie wyłączone.
       allow_unactivated_label: Zezwól nieaktywowanym kontom na ocenianie
       allow_unactivated_help: Po włączeniu użytkownicy, którzy nie potwierdzili adresu e-mail, mogą oceniać tematy.
+      show_moderation_controls_label: Zawsze pokazuj kontrolki oceniania w menu tematu
+      show_moderation_controls_help: Domyślnie „Disable Rating" i „Reset All Ratings" pojawiają się w menu ⋮ tematu tylko gdy ocena jest widoczna na danym temacie — są ukryte, gdy tagi nie pozwalają tam oceniać (zarządzanie ukrytą oceną nic nie wnosi). Włącz, aby pokazywać je zawsze — np. do zarządzania ocenami tam, gdzie widżet jest ukryty. Nadal wymaga odpowiednich uprawnień moderacji. Domyślnie wyłączone.
 
       tag_config_label: Uprawnienia oceniania per tag
       tag_config_help: |
@@ -39,11 +43,24 @@ tryhackx-topic-rating:
       tags_unavailable: Rozszerzenie Tagi musi być zainstalowane i włączone aby skorzystać z uprawnień per tag.
       tags_empty: Brak tagów. Najpierw utwórz tagi w ustawieniach rozszerzenia Tagi.
 
+      untagged_enabled_label: Pozwól oceniać tematy bez tagów
+      untagged_enabled_help: Gdy wyłączone, tematy bez żadnych tagów nie pokazują widżetu oceny i nie można ich oceniać. Przydatne, gdy chcesz, by oceniane były tylko wybrane tagi. Domyślnie włączone.
+      secondary_solo_title: Tagi drugorzędne użyte samodzielnie (bez głównego)
+      secondary_solo_help: |
+        Dotyczy tematów otagowanych TYLKO tagiem drugorzędnym, bez głównego
+        (np. ogłoszenia utworzone z pominięciem limitu tagów).
+        Temat można oceniać, jeśli choć jeden z jego tagów drugorzędnych jest tu „Włączony".
+        To niezależne od nadpisań sub-tagów per-główny powyżej. Domyślnie: Wyłączone — włącz tylko te tagi drugorzędne, które mają być oceniane samodzielnie.
+      secondary_enable_all: Włącz wszystkie
+      secondary_disable_all: Wyłącz wszystkie
+
       display_when_restricted_label: Co widzą użytkownicy bez prawa do oceniania
       display_when_restricted_help: Wybierz, co widzą użytkownicy którzy nie mogą oceniać dyskusji (z powodu ograniczeń tag-owych). "Gwiazdki tylko do odczytu" zachowuje widoczną kontrolkę bez możliwości kliknięcia. "Ukryj" całkowicie usuwa widget. "Komunikat" zastępuje go krótką notką.
       display_when_restricted_readonly: Gwiazdki tylko do odczytu (domyślnie)
       display_when_restricted_hidden: Ukryj kontrolkę oceny
       display_when_restricted_message: Pokaż krótki komunikat
+      hide_disabled_ratings_label: Ukryj oceny na tematach z wyłączonym ocenianiem
+      hide_disabled_ratings_help: Gdy tematu nie można już oceniać, bo wszystkie jego tagi są wyłączone (np. tag zmieniono na wyłączony po tym jak temat został oceniony), ukryj widżet oceny w całości — wraz z istniejącymi ocenami — dla osób, które nie mogą oceniać. Zapobiega nadużyciu „zdobądź oceny, potem zamroź wynik". Gdy wyłączone, takie tematy wracają do opcji wyświetlania powyżej. Domyślnie włączone. Osoby, które MOGĄ oceniać (np. grupy z bypass), nadal je widzą.
 
       list_display_heading: Wyświetlanie oceny na liście tematów
       list_style_desktop_label: Styl wyświetlania — desktop

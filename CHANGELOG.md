@@ -13,9 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > (six per-device display styles), make the compact single star **clickable**
 > with an optional **rate-from-the-modal** control, and manage the author
 > **avatar** from a new **shared** Desktop/Mobile section that stays in sync
-> with `flarum-thumb-sliders`. Plus a batch of ratings-modal fixes. No breaking
-> changes, and **no new migrations in this extension** — the shared avatar
-> keys default safely on their own.
+> with `flarum-thumb-sliders`. Also tightens **per-tag control** — standalone
+> secondary tags, tagless discussions, hiding empty widgets from non-voters, and
+> hiding "frozen" ratings on topics that became non-rateable. Plus a batch of
+> ratings-modal fixes. No breaking changes, and **no new migrations in this
+> extension** — new keys default safely on their own.
+>
+> ⚠️ **Behaviour note:** discussions tagged with **only a secondary tag (no
+> primary)** now default to **not** rateable (previously they were always
+> rateable). Re-enable specific ones under *Secondary tags used on their own*.
 
 ### Added
 - **Per-device discussion-list rating styles.** New settings *Display style —
@@ -53,6 +59,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tryhackxAvatarModeDesktop` / `…Mobile`), so changing it in one is reflected
   in the other. The "replace" modes self-detect Thumb Sliders — with it absent
   they behave as *Show*.
+- **"Secondary tags used on their own (no primary tag)"** — a new list in the
+  per-tag admin (below the primary tree) that controls discussions tagged with
+  **only a secondary tag and no primary**. Each standalone secondary tag is
+  *Enabled* / *Disabled*; **default is Disabled** (opt-in), with collapse +
+  *Enable all* / *Disable all*. A secondary-only discussion is rateable if at
+  least one of its secondary tags is enabled here. Stored as bare keys in the
+  existing `tag_config`.
+- **"Allow rating on discussions with no tags"** (`untagged_enabled`, default
+  **on**). When off, tagless discussions show no rating widget and can't be
+  rated (`ratingDisplayMode` returns `hidden` for them).
+- **"Hide empty stars from users who can't rate"** (`hide_empty_for_nonvoters`,
+  default **off**). On the discussion list, topics with **no ratings yet** don't
+  render the widget for viewers who can't rate (guests, restricted groups).
+  Already-rated topics still show. Serialized as
+  `tryhackxTopicRatingHideEmptyForNonVoters`.
+- **"Hide ratings on rating-disabled topics"** (`hide_disabled_ratings`, default
+  **on**). When a topic can no longer be rated because **all of its tags are
+  disabled** (e.g. its tag was switched to a disabled one *after* it was rated),
+  the widget — including any existing ratings — is hidden for viewers who can't
+  rate, instead of showing them read-only. Prevents "rate it, then lock in the
+  score" abuse. Viewers who *can* rate (e.g. bypass groups) still see it. This
+  wires up the previously-dormant `isRatingDisabled()` check.
+- **Rating moderation items follow the rating's visibility.** *Disable Rating*
+  and *Reset All Ratings* now appear in the discussion's ⋮ controls dropdown
+  only when the rating is actually shown on that topic — they're hidden when the
+  topic's tags / untagged config hide the rating (managing a hidden rating does
+  nothing). The per-topic moderator toggle is exempt, so a topic disabled from
+  the menu can still be re-enabled there. A new **"Always show rating controls
+  in the discussion menu"** setting (`show_moderation_controls`, default **off**)
+  overrides this to always show them — handy for managing ratings where the
+  widget is hidden. Still gated by the moderation permissions. Serialized as
+  `tryhackxTopicRatingShowModerationControls`.
 
 ### Changed
 - **Shared discussion-list layout module → `LAYOUT_VERSION = 5`**
@@ -65,6 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of stretching edge-to-edge, and clip long labels with an ellipsis
   (`max-width: 100%`) so they never overflow on narrow / mobile widths — the
   full label still shows when the native picker opens.
+- The **"Secondary tags used on their own"** admin list is rendered as a
+  vertical stack (matching the primary tree) and is **collapsed by default**.
 
 ### Fixed
 - **Ratings modal title showed `Ratings ({undefined})`** when the list
@@ -73,6 +113,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discussion page.
 - **Compact single empty star** rendered in a washed-out grey/white; it now
   uses the star colour (yellow) to match the half / full states.
+- **Discussions tagged with only a secondary tag (no primary) were always
+  rateable**, ignoring the per-tag settings — because the policy defaulted an
+  unconfigured standalone secondary to *enabled* and the admin had no way to
+  disable it. Such discussions now default to **Disabled** and are controlled
+  by the new "Secondary tags used on their own" list. Tagless discussions get
+  their own switch (above). (Discovered via a per-tag report where only one
+  primary tag was enabled yet announcement-style, secondary-only topics still
+  showed ratings.)
 
 ## [2.1.2] - 2026-06-01
 

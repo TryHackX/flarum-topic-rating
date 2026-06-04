@@ -50,13 +50,16 @@ fine-grained admin / permission controls.
 - **Per-tag rating permissions** *(requires `flarum/tags`)* — card-grid
   admin tree controls who can rate where. Three states per primary tag
   (*Enabled / Disabled / Allow groups*) with per-(primary × secondary)
-  overrides. **Most-permissive wins** across a discussion's tags.
+  overrides. **Most-permissive wins** across a discussion's tags. Plus a
+  dedicated list for **standalone secondary tags** (topics with no primary —
+  opt-in, default off) and a switch for **tagless** discussions.
 - **Bypass-group picker** — pick which groups can rate even on
   restricted tags (Admin by default; deselect Admin to subject admins
   to the same rules for testing).
 - **Display mode for restricted users** — choose what users without
-  rating permission see: *Read-only stars*, *Hidden widget*, or *Short
-  message*.
+  rating permission see on otherwise-open topics: *Read-only stars*,
+  *Hidden widget*, or *Short message* — plus an anti-abuse option to hide
+  ratings entirely on topics that became non-rateable.
 - **Permission-based** — global *Rate discussions* permission (Reply
   section), plus moderator-only *Enable/Disable* and *Reset all*.
 - **Unactivated accounts** — optional admin toggle that lets users without
@@ -119,13 +122,18 @@ Enable the extension in **Admin Panel → Extensions → Topic Rating**.
 | **Allow unactivated accounts to rate** | Off | Users without email confirmation can submit ratings. |
 | **Show rating in discussion list** | On | Visibility toggle for the stars on the homepage list. When off, ratings stay on the discussion page. |
 | **Allow rating from the discussion list** | On | Make the *full-stars-in-place* list stars interactive (click + hover preview). When off, the list shows the rating read-only. |
+| **Hide empty stars from users who can't rate** | Off | On the list, topics with **no ratings yet** don't render the widget for viewers who can't rate (guests, restricted groups). Already-rated topics still show. |
 | **Display style — desktop** / **— mobile** | Full stars — in place | How the rating renders on the list, **per device**: *full stars* / *one star + score* / *one graded star (empty-half-full) + score*, each either *in place* (meta column) or *after the title*. Compact & after-title styles are display-only. |
 | **Make the single star clickable** ² | On | Clicking the single star + number opens the ratings modal (even after the title). Off = display-only, and topics with **no** rating show no star at all. |
 | **Allow rating inside the modal** ² | Off | Adds an interactive rating control at the top of the ratings modal, so users can rate without leaving the list. |
 | **Avatars — Desktop** / **Mobile** ³ | Show avatar | Per device: *Show* / *Replace with thumbnail when the topic has an image* / *Always replace* / *Hide avatar*. |
+| **Always show rating controls in the discussion menu** | Off | By default, *Disable Rating* / *Reset All Ratings* appear in the ⋮ dropdown only when the rating is shown on that topic (hidden when its tags disable rating). Turn on to always show them (still gated by the moderation permissions) — useful for managing ratings where the widget is hidden. |
 | **Per-tag rating permissions** ¹ | empty / all enabled | Card-grid tree. Per-primary-tag state (*Enabled / Disabled / Allow groups*), per-(primary × secondary) override (*Inherit* by default). |
+| **Secondary tags used on their own** ¹ | Disabled | Standalone list controlling discussions tagged with **only a secondary tag, no primary** (e.g. announcements posted bypassing tag-count limits). Per tag *Enabled / Disabled*; opt-in. A secondary-only topic is rateable if **any** of its secondary tags is enabled here. |
+| **Allow rating on discussions with no tags** ¹ | On | When off, tagless discussions show no rating widget and can't be rated. |
 | **Bypass tag restrictions** ¹ | Admin group | Groups whose members can rate even where a tag is *Disabled* or *Allow groups*. Empty = nobody bypasses. |
-| **What to show users without rating permission** ¹ | Read-only stars | One of: *Read-only stars* (default), *Hidden*, *Message*. |
+| **What to show users without rating permission** ¹ | Read-only stars | What viewers who can't rate an **otherwise-open** topic see: *Read-only stars* (default), *Hidden*, *Message*. |
+| **Hide ratings on rating-disabled topics** ¹ | On | When a topic's rating is **fully disabled** (all its tags disabled — e.g. its tag was switched to a disabled one after it was rated), hide the widget and any existing ratings from viewers who can't rate, rather than showing them read-only. Prevents "rate then lock the score" abuse. Viewers who *can* rate still see it. |
 
 ¹ Visible only when `flarum/tags` is enabled.
 ² Visible only when a single-star *Display style* is selected (the modal-rate toggle appears only when "Make the single star clickable" is on).
@@ -138,20 +146,29 @@ rating attempt walks the discussion's tags this way:
 
 1. **Bypass short-circuits everything.** If the actor's group is in the
    bypass-group list, allow.
-2. For every (primary, secondary) tag combination on the discussion,
-   resolve the effective state:
+2. **No tags at all?** Governed by *Allow rating on discussions with no tags*
+   (on → legacy global-permission decision; off → denied + hidden).
+3. **Only secondary tags (no primary)?** Each secondary's standalone state
+   comes from the *Secondary tags used on their own* list (**default
+   Disabled**). Most-permissive wins — rateable if any one is enabled.
+4. **Has a primary tag?** For every (primary, secondary) combination:
    - The compound key `primaryId_secondaryId` overrides if set;
    - Otherwise the secondary's default (`inherit`) follows the primary;
    - The primary's own state (or `enabled` if unset) applies.
-3. **Most-permissive wins**: if any combination grants the actor access
+5. **Most-permissive wins**: if any combination grants the actor access
    (*enabled* + has the global Rate permission, or *groups* + actor's
    group is allowed, or bypass on that tag), the rating is allowed.
-4. Otherwise the rating is denied.
+6. Otherwise the rating is denied.
 
-**Special case — every tag effectively *Disabled*:** the
-`ratingDisplayMode` API field returns the configured "restricted display
-mode" (e.g. *Hidden*), so the widget can be removed entirely on truly
-closed discussions.
+**Display when a topic can't be rated.** A viewer who can't rate an
+*otherwise-open* topic gets the *What to show users without rating permission*
+mode (read-only / hidden / message). But a topic whose rating is **fully
+disabled** (every tag disabled, e.g. its tag was switched to a disabled one
+after it had been rated) is hidden entirely — widget *and* existing ratings —
+when *Hide ratings on rating-disabled topics* is on (the default). That
+prevents "rate it, then lock in the score" abuse; viewers who *can* rate still
+see it. Tagless discussions with *Allow rating on discussions with no tags*
+off are likewise hidden for everyone.
 
 ### Permissions
 

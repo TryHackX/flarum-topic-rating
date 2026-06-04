@@ -14,6 +14,7 @@ export default class TagPermissionTree extends Component {
 
         this.state = this.parseValue();
         this.expanded = {};
+        this.secondaryExpanded = false; // collapsed on load — expand to configure
         this.loaded = false;
         this.loadError = null;
         this.tags = [];
@@ -70,10 +71,19 @@ export default class TagPermissionTree extends Component {
         for (const id of Object.keys(this.state)) {
             const entry = this.state[id];
             if (!entry || !entry.state) continue;
-            
+
             const parts = id.split('_');
-            const defaultState = parts.length === 2 ? STATE_INHERIT : STATE_ENABLED;
-            
+            let defaultState;
+            if (parts.length === 2) {
+                defaultState = STATE_INHERIT; // primary_secondary override
+            } else {
+                // Bare key: a primary tag defaults to Enabled, but a STANDALONE
+                // secondary tag (the "used on their own" list) defaults to
+                // Disabled — so only an explicit "Enabled" is persisted there.
+                const tag = this.findTag(id);
+                defaultState = (tag && !tag.isPrimary()) ? STATE_DISABLED : STATE_ENABLED;
+            }
+
             if (entry.state === defaultState) continue;
             if (entry.state === STATE_GROUPS && (!entry.groups || entry.groups.length === 0)) continue;
             cleaned[id] = entry;
@@ -137,6 +147,32 @@ export default class TagPermissionTree extends Component {
 
     collapseAll() {
         this.expanded = {};
+    }
+
+    // ── Standalone secondary tags ────────────────────────────────────────
+    // A discussion tagged with ONLY secondary tags (no primary) is resolved by
+    // the backend via each secondary's own (bare) key — separate from the
+    // `primary_secondary` overrides above. These rows let the admin set that
+    // standalone state. Default is "Enabled" (matches the policy default), so
+    // only "Disabled" gets persisted.
+
+    // Standalone secondary tags default to Disabled, so the "exceptions" worth
+    // badging are the ones explicitly Enabled.
+    secondaryEnabledCount() {
+        let n = 0;
+        for (const tag of this.childrenOf()) {
+            const e = this.state[String(tag.id())];
+            if (e && e.state === STATE_ENABLED) n++;
+        }
+        return n;
+    }
+
+    setAllSecondary(state) {
+        for (const tag of this.childrenOf()) {
+            this.state[String(tag.id())] = { state };
+        }
+        this.persist();
+        m.redraw();
     }
 
     view() {
@@ -221,6 +257,96 @@ export default class TagPermissionTree extends Component {
                         {app.translator.trans('tryhackx-topic-rating.admin.settings.tag_hierarchy_hint', {}, true)}
                     </p>
                 )}
+
+                {this.childrenOf().length > 0 && this.renderSecondarySection()}
+            </div>
+        );
+    }
+
+    renderSecondarySection() {
+        const secondaryTags = this.childrenOf();
+        const enabledCount = this.secondaryEnabledCount();
+
+        return (
+            <div className="TagPermissionSecondaryTree">
+                <div
+                    className="TagPermissionSecondaryTree-header"
+                    onclick={() => { this.secondaryExpanded = !this.secondaryExpanded; }}
+                >
+                    <i className={'TagPermissionSecondaryTree-caret ' + (this.secondaryExpanded ? 'fas fa-caret-down' : 'fas fa-caret-right')}></i>
+                    <span className="TagPermissionSecondaryTree-title">
+                        {app.translator.trans('tryhackx-topic-rating.admin.settings.secondary_solo_title', {}, true)}
+                    </span>
+                    {enabledCount > 0 && (
+                        <span className="TagPermissionTree-overridesBadge" title={app.translator.trans('tryhackx-topic-rating.admin.settings.tag_overrides_count', { count: enabledCount }, true)}>
+                            <i className="fas fa-check"></i> {enabledCount}
+                        </span>
+                    )}
+                </div>
+
+                <p className="helpText TagPermissionSecondaryTree-help">
+                    {app.translator.trans('tryhackx-topic-rating.admin.settings.secondary_solo_help', {}, true)}
+                </p>
+
+                {this.secondaryExpanded && (
+                    <div className="TagPermissionTree-toolbar">
+                        <button
+                            type="button"
+                            className="Button Button--text TagPermissionTree-toolBtn"
+                            onclick={() => this.setAllSecondary(STATE_ENABLED)}
+                        >
+                            <i className="fas fa-check"></i>{' '}
+                            {app.translator.trans('tryhackx-topic-rating.admin.settings.secondary_enable_all', {}, true)}
+                        </button>
+                        <button
+                            type="button"
+                            className="Button Button--text TagPermissionTree-toolBtn"
+                            onclick={() => this.setAllSecondary(STATE_DISABLED)}
+                        >
+                            <i className="fas fa-ban"></i>{' '}
+                            {app.translator.trans('tryhackx-topic-rating.admin.settings.secondary_disable_all', {}, true)}
+                        </button>
+                    </div>
+                )}
+
+                {this.secondaryExpanded && (
+                    <div className="TagPermissionSecondaryTree-list">
+                        {secondaryTags.map((tag) => this.renderSecondaryRow(tag))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    renderSecondaryRow(tag) {
+        const id = String(tag.id());
+        // Default is Disabled for standalone secondary tags; only an explicit
+        // "Enabled" stored entry flips it on.
+        const stored = this.state[id];
+        const state = (stored && stored.state === STATE_ENABLED) ? STATE_ENABLED : STATE_DISABLED;
+
+        const stateOptions = {
+            [STATE_ENABLED]:  app.translator.trans('tryhackx-topic-rating.admin.settings.tag_state_enabled', {}, true),
+            [STATE_DISABLED]: app.translator.trans('tryhackx-topic-rating.admin.settings.tag_state_disabled', {}, true),
+        };
+
+        return (
+            <div key={'sec-' + id} className={'TagPermissionTree-row TagPermissionTree-row--root TagPermissionTree-row--state-' + state + ' TagPermissionSecondaryTree-row'}>
+                <div className="TagPermissionTree-rowMain">
+                    <span className="TagPermissionTree-togglePlaceholder"></span>
+                    <span className="TagPermissionTree-label">
+                        {tag.color() && <span className="TagPermissionTree-swatch" style={{ backgroundColor: tag.color() }}></span>}
+                        {tag.icon() && <i className={tag.icon() + ' TagPermissionTree-icon'}></i>}
+                        <span className="TagPermissionTree-name" title={tag.name()}>{tag.name()}</span>
+                    </span>
+                    <span className="TagPermissionTree-stateWrap">
+                        {Select.component({
+                            value: state,
+                            options: stateOptions,
+                            onchange: (val) => this.updateEntry(id, { state: val === STATE_DISABLED ? STATE_DISABLED : STATE_ENABLED }),
+                        })}
+                    </span>
+                </div>
             </div>
         );
     }

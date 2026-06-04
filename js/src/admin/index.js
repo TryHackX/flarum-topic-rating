@@ -84,9 +84,21 @@ const adminExtender = new Extend.Admin()
         type: 'boolean',
     }))
     .setting(() => ({
+        setting: 'tryhackx-topic-rating.hide_empty_for_nonvoters',
+        label: app.translator.trans('tryhackx-topic-rating.admin.settings.hide_empty_for_nonvoters_label', {}, true),
+        help: app.translator.trans('tryhackx-topic-rating.admin.settings.hide_empty_for_nonvoters_help', {}, true),
+        type: 'boolean',
+    }))
+    .setting(() => ({
         setting: 'tryhackx-topic-rating.allow_unactivated',
         label: app.translator.trans('tryhackx-topic-rating.admin.settings.allow_unactivated_label', {}, true),
         help: app.translator.trans('tryhackx-topic-rating.admin.settings.allow_unactivated_help', {}, true),
+        type: 'boolean',
+    }))
+    .setting(() => ({
+        setting: 'tryhackx-topic-rating.show_moderation_controls',
+        label: app.translator.trans('tryhackx-topic-rating.admin.settings.show_moderation_controls_label', {}, true),
+        help: app.translator.trans('tryhackx-topic-rating.admin.settings.show_moderation_controls_help', {}, true),
         type: 'boolean',
     }))
     // Per-device rating display style + cascading single-star options.
@@ -103,6 +115,12 @@ if (tagsOn) {
             type: 'tryhackx-topic-rating.tag-permission-tree',
         }))
         .setting(() => ({
+            setting: 'tryhackx-topic-rating.untagged_enabled',
+            label: app.translator.trans('tryhackx-topic-rating.admin.settings.untagged_enabled_label', {}, true),
+            help: app.translator.trans('tryhackx-topic-rating.admin.settings.untagged_enabled_help', {}, true),
+            type: 'boolean',
+        }))
+        .setting(() => ({
             setting: 'tryhackx-topic-rating.display_when_restricted',
             label: app.translator.trans('tryhackx-topic-rating.admin.settings.display_when_restricted_label', {}, true),
             help: app.translator.trans('tryhackx-topic-rating.admin.settings.display_when_restricted_help', {}, true),
@@ -112,6 +130,12 @@ if (tagsOn) {
                 hidden: app.translator.trans('tryhackx-topic-rating.admin.settings.display_when_restricted_hidden', {}, true),
                 message: app.translator.trans('tryhackx-topic-rating.admin.settings.display_when_restricted_message', {}, true),
             },
+        }))
+        .setting(() => ({
+            setting: 'tryhackx-topic-rating.hide_disabled_ratings',
+            label: app.translator.trans('tryhackx-topic-rating.admin.settings.hide_disabled_ratings_label', {}, true),
+            help: app.translator.trans('tryhackx-topic-rating.admin.settings.hide_disabled_ratings_help', {}, true),
+            type: 'boolean',
         }))
         .setting(() => ({
             setting: 'tryhackx-topic-rating.bypass_groups',

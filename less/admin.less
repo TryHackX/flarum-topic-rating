@@ -348,6 +348,49 @@
   }
 }
 
+// Standalone secondary-tag list (governs discussions tagged with ONLY a
+// secondary tag, no primary). Rendered below the primary tree by the same
+// TagPermissionTree component; rows reuse the .TagPermissionTree-row--root look.
+.TagPermissionSecondaryTree {
+  margin-top: 18px;
+  border-top: 1px solid var(--control-bg);
+  padding-top: 12px;
+
+  &-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  &-caret {
+    width: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted-color);
+  }
+
+  &-title {
+    flex: 0 1 auto;
+  }
+
+  &-help {
+    margin: 6px 0 10px;
+  }
+
+  // Single ≤360px column so the rows stack vertically like the primary tree
+  // (whose grid collapses to one 360px column inside the column-flex Form-group).
+  // Without this the list fills the help-text-stretched wrapper and goes wide.
+  &-list {
+    display: grid;
+    grid-template-columns: minmax(0, 360px);
+    gap: 12px;
+  }
+}
+
 .BypassGroupPicker {
   margin-top: 15px;
 

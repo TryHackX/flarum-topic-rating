@@ -83,10 +83,32 @@ return [
             Schema\Str::make('ratingDisplayMode')
                 ->get(function (Discussion $discussion, Context $context) {
                     $actor = $context->getActor();
+                    $policy = resolve(\TryHackX\TopicRating\Access\RatingPolicy::class);
+
+                    // Tagless discussions with "allow rating on untagged
+                    // discussions" turned off are hidden entirely (regardless of
+                    // the restricted-display mode, and for everyone).
+                    if ($policy->ratingForcedHidden($discussion)) {
+                        return 'hidden';
+                    }
+
+                    // Those who can rate always see the widget (incl. bypassers).
                     if ($actor->can('rate', $discussion)) {
                         return 'rate';
                     }
+
                     $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+
+                    // Hide existing ratings on topics whose rating is fully
+                    // disabled (all tags disabled, or moderator-disabled) for
+                    // viewers who can't rate — prevents "rate it, then switch to a
+                    // disabled tag to lock the score" abuse. On by default; when
+                    // off such topics fall back to the restricted-display mode.
+                    if ((bool) $settings->get('tryhackx-topic-rating.hide_disabled_ratings', true)
+                        && $policy->isRatingDisabled($discussion)) {
+                        return 'hidden';
+                    }
+
                     $mode = (string) $settings->get('tryhackx-topic-rating.display_when_restricted', 'readonly');
                     if (! in_array($mode, ['readonly', 'hidden', 'message'], true)) {
                         $mode = 'readonly';
@@ -145,6 +167,13 @@ return [
         // the ratings modal, and whether that modal lets the user rate.
         ->serializeToForum('tryhackxTopicRatingSingleClickable', 'tryhackx-topic-rating.single_clickable', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingSingleModalRate', 'tryhackx-topic-rating.single_modal_rate', 'boolval', false)
+        // On the discussion list, hide the (empty) widget for people who can't
+        // rate when a topic has zero ratings yet. Default false = keep showing.
+        ->serializeToForum('tryhackxTopicRatingHideEmptyForNonVoters', 'tryhackx-topic-rating.hide_empty_for_nonvoters', 'boolval', false)
+        // Add the rating moderation items (Disable Rating / Reset All Ratings)
+        // to the discussion's ⋮ controls menu. Handy for managing ratings when
+        // the star widget is hidden. Default false = not shown in the menu.
+        ->serializeToForum('tryhackxTopicRatingShowModerationControls', 'tryhackx-topic-rating.show_moderation_controls', 'boolval', false)
         // Shared avatar-display mode (see note at top of file). No ->default().
         ->serializeToForum('tryhackxAvatarModeDesktop', 'tryhackx-avatars.mode_desktop', $normalizeAvatarMode)
         ->serializeToForum('tryhackxAvatarModeMobile', 'tryhackx-avatars.mode_mobile', $normalizeAvatarMode)
@@ -158,5 +187,9 @@ return [
         ->default('tryhackx-topic-rating.list_style_desktop', 'full_meta')
         ->default('tryhackx-topic-rating.list_style_mobile', 'full_meta')
         ->default('tryhackx-topic-rating.single_clickable', true)
-        ->default('tryhackx-topic-rating.single_modal_rate', false),
+        ->default('tryhackx-topic-rating.single_modal_rate', false)
+        ->default('tryhackx-topic-rating.untagged_enabled', true)
+        ->default('tryhackx-topic-rating.hide_empty_for_nonvoters', false)
+        ->default('tryhackx-topic-rating.hide_disabled_ratings', true)
+        ->default('tryhackx-topic-rating.show_moderation_controls', false),
 ];
