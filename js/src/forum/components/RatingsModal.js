@@ -200,8 +200,7 @@ export default class RatingsModal extends Modal {
             this.moreResults = newRatings.length >= this.limit;
             this.loading = false;
             m.redraw();
-        }).catch((e) => {
-            console.error('RatingsModal load error:', e);
+        }).catch(() => {
             this.loading = false;
             m.redraw();
         });

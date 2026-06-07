@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-06-07
+
+> Follow-up hardening from a second audit pass.
+
+### Security
+- **Rating write/moderation endpoints now scope to discussions the actor can
+  see.** `CreateRatingController`, `DeleteRatingController`, `ToggleRatingController`
+  and `ResetRatingsController` resolved the discussion with a bare
+  `Discussion::findOrFail()`; they now use `whereVisibleTo($actor)->findOrFail()`,
+  matching the poll endpoint. Closes the edge case where a member could rate (or a
+  moderator could toggle/reset) a thread they aren't allowed to view, given its id
+  and a tag that's rate-enabled but view-restricted. `assertCan` was always the
+  primary gate; this is defense-in-depth and consistency.
+
+### Changed
+- Dropped a stray `console.error` from the ratings modal's load handler, and
+  guarded the admin Support modal's clipboard copy (`navigator.clipboard` absence
+  + a `.catch`) so it fails silently instead of throwing.
+
 ## [2.4.1] - 2026-06-07
 
 > Hotfix for 2.4.0: the ratings modal crashed on render, plus two scaling indexes.

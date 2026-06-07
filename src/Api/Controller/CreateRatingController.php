@@ -28,7 +28,9 @@ class CreateRatingController implements RequestHandlerInterface
             ]);
         }
 
-        $discussion = Discussion::findOrFail($discussionId);
+        // Scope to discussions the actor can actually see — you shouldn't be able
+        // to rate a thread you can't view, even if you know its id.
+        $discussion = Discussion::whereVisibleTo($actor)->findOrFail($discussionId);
 
         $actor->assertCan('rate', $discussion);
 

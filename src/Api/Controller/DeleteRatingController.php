@@ -25,7 +25,7 @@ class DeleteRatingController implements RequestHandlerInterface
             ->where('user_id', $actor->id)
             ->firstOrFail();
 
-        $discussion = Discussion::findOrFail($discussionId);
+        $discussion = Discussion::whereVisibleTo($actor)->findOrFail($discussionId);
         $actor->assertCan('rate', $discussion);
 
         $rating->delete();

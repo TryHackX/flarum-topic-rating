@@ -19,7 +19,7 @@ class ResetRatingsController implements RequestHandlerInterface
         $actor->assertRegistered();
 
         $discussionId = Arr::get($request->getQueryParams(), 'id');
-        $discussion = Discussion::findOrFail($discussionId);
+        $discussion = Discussion::whereVisibleTo($actor)->findOrFail($discussionId);
 
         $actor->assertCan('discussion.rate.reset');
 

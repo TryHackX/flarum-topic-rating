@@ -71,6 +71,7 @@ export default class SupportModal extends Modal {
 
   copyAddress(e, address) {
     const btn = e.currentTarget;
+    if (!navigator.clipboard) return;
     navigator.clipboard.writeText(address).then(() => {
       const icon = btn.querySelector('i');
       icon.className = 'fas fa-check';
@@ -80,6 +81,6 @@ export default class SupportModal extends Modal {
         icon.className = 'fas fa-copy';
         btn.classList.remove('SupportModal-copyBtn--copied');
       }, 2000);
-    });
+    }).catch(() => {});
   }
 }
