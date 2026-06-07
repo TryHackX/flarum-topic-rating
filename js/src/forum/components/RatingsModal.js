@@ -1,6 +1,5 @@
 import Modal from 'flarum/common/components/Modal';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
-import avatar from 'flarum/common/helpers/avatar';
 import app from 'flarum/forum/app';
 import StarRating from './StarRating';
 import RatingPolling from './RatingPolling';
@@ -119,7 +118,16 @@ export default class RatingsModal extends Modal {
             <div className="RatingsModal-item" key={rating.id()}>
                 <div className="RatingsModal-item-avatar">
                     {user ? (
-                        <a href={userProfileUrl}>{avatar(user)}</a>
+                        <a href={userProfileUrl}>
+                            <span
+                                className="Avatar"
+                                style={user.avatarUrl()
+                                    ? { backgroundImage: 'url(' + user.avatarUrl() + ')' }
+                                    : { backgroundColor: user.color() || '#888' }}
+                            >
+                                {!user.avatarUrl() ? (user.displayName() || '?').charAt(0).toUpperCase() : ''}
+                            </span>
+                        </a>
                     ) : (
                         <span className="Avatar">?</span>
                     )}

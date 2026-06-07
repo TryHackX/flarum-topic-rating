@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-06-07
+
+> Hotfix for 2.4.0: the ratings modal crashed on render, plus two scaling indexes.
+
+### Fixed
+- **Ratings modal showed an endless spinner** (both logged-in and guest). The
+  2.4.0 rewrite called `flarum/common/helpers/avatar`, which isn't present in
+  this Flarum 2.x build's runtime registry (`flarum.reg.get` returned `undefined`),
+  so `renderRatingItem` threw `TypeError: … is not a function` on every row and
+  the list never rendered. Avatars are now built from the `User` model's own
+  `avatarUrl()` / `color()` / `displayName()` getters — no dependency on the
+  helper — so the modal renders again.
+
+### Performance
+- **Indexes on `discussion_ratings`** (migration): `user_id` for the per-request
+  "all of this actor's ratings" load behind the `userRating` field, and
+  `(discussion_id, updated_at)` for the poll endpoint's "any ratings since X?"
+  range scan. Additive — safe on large tables. Matters on big forums where the
+  table isn't tiny.
+
 ## [2.4.0] - 2026-06-07
 
 > **Security + hardening release.** Closes an unauthenticated ratings-enumeration
