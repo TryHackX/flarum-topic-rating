@@ -1,7 +1,9 @@
 import Modal from 'flarum/common/components/Modal';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
+import avatar from 'flarum/common/helpers/avatar';
 import app from 'flarum/forum/app';
 import StarRating from './StarRating';
+import RatingPolling from './RatingPolling';
 
 export default class RatingsModal extends Modal {
     oninit(vnode) {
@@ -18,6 +20,10 @@ export default class RatingsModal extends Modal {
         this.pollInterval = null;
         this.lastPollTime = new Date().toISOString();
 
+        // Hold the page-level RatingPolling while we're open — this modal runs
+        // its own (faster) poll, so the two would otherwise duplicate requests.
+        RatingPolling.pause();
+
         this.loadRatings();
         this.startPolling();
     }
@@ -25,6 +31,7 @@ export default class RatingsModal extends Modal {
     onremove(vnode) {
         super.onremove(vnode);
         this.stopPolling();
+        RatingPolling.resume();
     }
 
     className() {
@@ -82,11 +89,9 @@ export default class RatingsModal extends Modal {
         );
     }
 
-    parseDate(dateStr) {
-        if (!dateStr) return null;
-        const parsed = new Date(dateStr);
-        if (isNaN(parsed.getTime()) || parsed.getFullYear() <= 1970) return null;
-        return parsed;
+    validDate(date) {
+        if (!(date instanceof Date) || isNaN(date.getTime()) || date.getFullYear() <= 1970) return null;
+        return date;
     }
 
     formatDateTime(date) {
@@ -99,26 +104,22 @@ export default class RatingsModal extends Modal {
     }
 
     renderRatingItem(rating) {
-        const user = rating.user;
-        const stars = this.renderStarsDisplay(rating.rating);
+        const user = rating.user();
+        const stars = this.renderStarsDisplay(rating.rating());
 
-        const createdAt = this.parseDate(rating.createdAt);
-        const updatedAt = this.parseDate(rating.updatedAt);
+        const createdAt = this.validDate(rating.createdAt());
+        const updatedAt = this.validDate(rating.updatedAt());
 
         const wasUpdated = updatedAt && createdAt && updatedAt.getTime() - createdAt.getTime() > 1000;
         const displayDate = wasUpdated ? updatedAt : createdAt;
 
-        const userProfileUrl = user ? (app.route('user', { username: user.slug || user.username })) : null;
+        const userProfileUrl = user ? app.route.user(user) : null;
 
         return (
-            <div className="RatingsModal-item" key={rating.id}>
+            <div className="RatingsModal-item" key={rating.id()}>
                 <div className="RatingsModal-item-avatar">
                     {user ? (
-                        <a href={userProfileUrl}>
-                            <span className="Avatar" style={user.avatarUrl ? {'background-image': 'url(' + user.avatarUrl + ')'} : {'background-color': user.color || '#888'}}>
-                                {!user.avatarUrl ? (user.displayName || user.username || '?').charAt(0).toUpperCase() : ''}
-                            </span>
-                        </a>
+                        <a href={userProfileUrl}>{avatar(user)}</a>
                     ) : (
                         <span className="Avatar">?</span>
                     )}
@@ -127,7 +128,7 @@ export default class RatingsModal extends Modal {
                     <div className="RatingsModal-item-top">
                         {user ? (
                             <a href={userProfileUrl} className="RatingsModal-item-username">
-                                {user.displayName || user.username}
+                                {user.displayName()}
                             </a>
                         ) : (
                             <span className="RatingsModal-item-username">
@@ -148,7 +149,7 @@ export default class RatingsModal extends Modal {
                     <div className="RatingsModal-item-stars">
                         {stars}
                         <span className="RatingsModal-item-value">
-                            {(rating.rating / 2).toFixed(1)}
+                            {(rating.rating() / 2).toFixed(1)}
                         </span>
                     </div>
                 </div>
@@ -175,72 +176,26 @@ export default class RatingsModal extends Modal {
     loadRatings() {
         this.loading = true;
 
-        const discussionId = this.discussion.id();
-        const apiUrl = app.forum.attribute('apiUrl') + '/discussion-ratings'
-            + '?discussion_id=' + discussionId
-            + '&page[offset]=' + this.offset
-            + '&page[limit]=' + this.limit;
-
-        fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-Token': app.session.csrfToken,
-            },
-            credentials: 'same-origin',
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response.json();
-        })
-        .then((response) => {
-            const newRatings = this.parseRatings(response);
+        app.store.find('discussion-ratings', {
+            discussion_id: this.discussion.id(),
+            page: { offset: this.offset, limit: this.limit },
+        }).then((results) => {
+            const newRatings = Array.isArray(results) ? results : [];
             this.ratings = this.offset === 0 ? newRatings : [...this.ratings, ...newRatings];
-            const metaTotal = response.meta && response.meta.total;
-            this.total = (typeof metaTotal === 'number')
-                ? metaTotal
+
+            const total = results && results.payload && results.payload.meta
+                && results.payload.meta.page && results.payload.meta.page.total;
+            this.total = (typeof total === 'number')
+                ? total
                 : (this.discussion.ratingCount() || this.ratings.length);
+
             this.moreResults = newRatings.length >= this.limit;
             this.loading = false;
             m.redraw();
-        })
-        .catch((e) => {
+        }).catch((e) => {
             console.error('RatingsModal load error:', e);
             this.loading = false;
             m.redraw();
-        });
-    }
-
-    parseRatings(response) {
-        const data = response.data || [];
-        const included = response.included || [];
-
-        const usersMap = {};
-        included.forEach((item) => {
-            if (item.type === 'users') {
-                usersMap[item.id] = {
-                    id: item.id,
-                    slug: item.attributes.slug || item.attributes.username,
-                    username: item.attributes.username,
-                    displayName: item.attributes.displayName || item.attributes.username,
-                    avatarUrl: item.attributes.avatarUrl,
-                    color: item.attributes.color,
-                };
-            }
-        });
-
-        return data.map((item) => {
-            const userId = item.relationships && item.relationships.user
-                ? item.relationships.user.data.id
-                : null;
-
-            return {
-                id: item.id,
-                rating: item.attributes.rating,
-                createdAt: item.attributes.createdAt,
-                updatedAt: item.attributes.updatedAt,
-                user: userId ? usersMap[userId] || null : null,
-            };
         });
     }
 
@@ -269,26 +224,21 @@ export default class RatingsModal extends Modal {
     }
 
     pollForNewRatings() {
-        const apiUrl = app.forum.attribute('apiUrl') + '/discussion-ratings/poll'
-            + '?discussion_id=' + this.discussion.id()
-            + '&since=' + encodeURIComponent(this.lastPollTime);
-
-        fetch(apiUrl, {
+        app.request({
             method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-Token': app.session.csrfToken,
+            url: app.forum.attribute('apiUrl') + '/discussion-ratings/poll',
+            params: {
+                discussion_id: this.discussion.id(),
+                since: this.lastPollTime,
             },
-            credentials: 'same-origin',
-        })
-        .then(r => r.json())
-        .then((data) => {
-            if (data.hasNewRatings) {
+            errorHandler: () => {},
+        }).then((data) => {
+            if (data && data.hasNewRatings) {
                 this.lastPollTime = new Date().toISOString();
                 this.total = data.ratingCount;
                 this.offset = 0;
                 this.loadRatings();
             }
-        });
+        }).catch(() => {});
     }
 }

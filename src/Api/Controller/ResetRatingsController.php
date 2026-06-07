@@ -25,10 +25,7 @@ class ResetRatingsController implements RequestHandlerInterface
 
         Rating::where('discussion_id', $discussion->id)->delete();
 
-        $discussion->rating_count = 0;
-        $discussion->rating_average = 0;
-        $discussion->last_rated_at = null;
-        $discussion->save();
+        Rating::recalculate($discussion);
 
         return new JsonResponse([
             'success' => true,

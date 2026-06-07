@@ -209,8 +209,8 @@ It registers these endpoints:
 | `DELETE` | `/discussion-ratings` | Remove your rating. |
 | `POST` | `/discussions/{id}/toggle-rating` | Toggle rating on a discussion. |
 | `POST` | `/discussions/{id}/reset-ratings` | Reset all ratings on a discussion. |
+| `GET` | `/discussion-ratings?discussion_id={id}` | List one discussion's ratings (the ratings modal). Requires a discussion id and is scoped to discussions the actor can view. |
 | `GET` | `/discussion-ratings/poll` | Poll for fresh average / count / your-rating. |
-| `GET` | `/tryhackx-topic-rating/tag-config` | **Admin only.** Structured JSON of every Topic Rating setting (parsed) — `{settings, bypassGroups, tagConfig}`. |
 
 ## Compatibility
 

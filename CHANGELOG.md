@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-06-07
+
+> **Security + hardening release.** Closes an unauthenticated ratings-enumeration
+> hole, removes an N+1 query on the discussion list, makes rating aggregates
+> race-safe, and brings the JS layer in line with Flarum conventions. No new
+> migrations.
+>
+> ⚠️ **Behaviour notes:**
+> - `GET /api/discussion-ratings` now **requires a `discussion_id`** and is
+>   scoped to discussions the actor can view. Called without one it returns an
+>   empty list instead of every rating. The ratings modal always passes the id,
+>   so the UI is unaffected; only external callers relying on the unscoped dump
+>   are.
+> - The admin-only `GET /tryhackx-topic-rating/tag-config` endpoint and the
+>   `tryhackxTopicRatingBypassGroups` forum attribute have been **removed** (both
+>   were unused by the extension).
+
+### Security
+- **Unauthenticated ratings enumeration fixed.** `GET /api/discussion-ratings`
+  with no `discussion_id` previously returned the **entire** `discussion_ratings`
+  table — every user↔rating↔discussion mapping — to anonymous visitors. The
+  listing now requires a positive `discussion_id` and is scoped through
+  `whereVisibleTo($actor)`, so ratings on threads the actor can't see no longer
+  leak. `GET /discussion-ratings/poll` is visibility-scoped the same way.
+- **`bypass_groups` is no longer serialized to the public forum payload.** It
+  exposed which groups have privileged rating access to every visitor and was
+  never read by the frontend (the backend already resolves `canRate` etc.).
+
+### Changed
+- **N+1 removed on the discussion list.** The `userRating` field used to issue
+  one query per serialized discussion; the actor's own ratings are now loaded in
+  a single query per request and read from a map.
+- **Rating aggregates are recalculated atomically.** Count / average /
+  last-rated are now written in one `UPDATE … (SELECT …)` statement shared by the
+  create, delete and reset controllers, instead of a read-modify-write that two
+  concurrent ratings could interleave and leave out of sync.
+- **Rating fields extracted to a dedicated, injected class**
+  (`Api\DiscussionRatingFields`) — no more `resolve()` inside per-model
+  serializer closures, and the single injected policy shares its per-request
+  memoization across the whole list.
+- **Ratings modal uses `app.store` / `app.request` and real `Rating` models**
+  plus the core `avatar()` helper, instead of raw `fetch()` with hand-built
+  JSON:API parsing and manually-assembled plain objects.
+- **The discussion-page poll pauses while the ratings modal is open** (the modal
+  runs its own faster poll), removing the duplicate request in that window.
+- `DiscussionPage.onremove` now chains through `extend()` instead of a manual
+  prototype monkey-patch that could go stale if another extension reassigned it.
+- The admin "Reset extension settings" cancel-button styling now `extend()`s the
+  modal directly instead of a session-long, document-wide `MutationObserver`.
+
+### Removed
+- **`GET /tryhackx-topic-rating/tag-config`** admin endpoint
+  (`GetTagConfigController`) — dead code; the admin reads these settings directly.
+- **`tryhackxTopicRatingBypassGroups`** forum-serialized attribute (see Security).
+
+### Fixed
+- `pollForNewRatings()` no longer leaks an unhandled promise rejection on every
+  failed poll tick (it now goes through `app.request` with an error handler).
+
+### Other
+- `composer.json`: PHP constraint tightened `^8.2` → `^8.3` to match Flarum 2.x's
+  minimum (and a stray tab in the authors block fixed).
+- The `Rating` JS model now declares its `discussion` relationship, matching the
+  API resource.
+
 ## [2.3.0] - 2026-06-04
 
 > Finer **per-tag control** and a few visibility options on top of 2.2.0: manage

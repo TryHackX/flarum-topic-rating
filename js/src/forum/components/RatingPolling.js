@@ -4,11 +4,13 @@ class RatingPolling {
     constructor() {
         this.interval = null;
         this.discussionId = null;
+        this.paused = false;
     }
 
     start(discussion) {
         this.stop();
         this.discussionId = discussion.id();
+        this.paused = false;
 
         this.interval = setInterval(() => {
             this.poll(discussion);
@@ -21,9 +23,23 @@ class RatingPolling {
             this.interval = null;
         }
         this.discussionId = null;
+        this.paused = false;
+    }
+
+    // Temporarily hold the page-level poll while the ratings modal is open: the
+    // modal runs its own (faster) poll and refreshes the discussion, so polling
+    // twice for the same data is wasted requests.
+    pause() {
+        this.paused = true;
+    }
+
+    resume() {
+        this.paused = false;
     }
 
     poll(discussion) {
+        if (this.paused) return;
+
         if (!discussion || discussion.id() !== this.discussionId) {
             this.stop();
             return;

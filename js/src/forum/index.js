@@ -110,13 +110,9 @@ app.initializers.add('tryhackx-topic-rating', () => {
         }
     });
 
-    const originalOnremove = DiscussionPage.prototype.onremove;
-    DiscussionPage.prototype.onremove = function (vnode) {
+    extend(DiscussionPage.prototype, 'onremove', function () {
         RatingPolling.stop();
-        if (originalOnremove) {
-            originalOnremove.call(this, vnode);
-        }
-    };
+    });
 
     extend(CommentPost.prototype, 'headerItems', function (items) {
         const post = this.attrs.post;

@@ -1,13 +1,12 @@
 <?php
 
 use TryHackX\TopicRating\Api\Controller;
+use TryHackX\TopicRating\Api\DiscussionRatingFields;
 use TryHackX\TopicRating\Api\Resource\RatingResource;
 use TryHackX\TopicRating\Access\RatingPolicy;
 use TryHackX\TopicRating\Listener\CleanupTagConfig;
 use TryHackX\TopicRating\Rating;
 use Flarum\Api\Resource\DiscussionResource;
-use Flarum\Api\Context;
-use Flarum\Api\Schema;
 use Flarum\Discussion\Discussion;
 use Flarum\Extend;
 
@@ -48,92 +47,10 @@ return [
     // Register RatingResource (handles listing via Index endpoint)
     (new Extend\ApiResource(RatingResource::class)),
 
-    // Extend DiscussionResource with rating fields
+    // Extend DiscussionResource with rating fields (definitions live in a
+    // dedicated, constructor-injected class — see DiscussionRatingFields).
     (new Extend\ApiResource(DiscussionResource::class))
-        ->fields(fn () => [
-            Schema\Integer::make('ratingCount')
-                ->get(fn (Discussion $discussion) => (int) $discussion->rating_count),
-            Schema\Number::make('ratingAverage')
-                ->get(fn (Discussion $discussion) => (float) $discussion->rating_average),
-            Schema\DateTime::make('lastRatedAt')
-                ->nullable()
-                ->get(fn (Discussion $discussion) => $discussion->last_rated_at),
-            Schema\Boolean::make('ratingDisabled')
-                ->get(fn (Discussion $discussion) => (bool) $discussion->rating_disabled),
-            Schema\Boolean::make('canRate')
-                ->get(fn (Discussion $discussion, Context $context) =>
-                    $context->getActor()->can('rate', $discussion)
-                ),
-            Schema\Boolean::make('canRateRequiresActivation')
-                ->get(function (Discussion $discussion, Context $context) {
-                    $actor = $context->getActor();
-                    if (! $actor->id || $actor->is_email_confirmed
-                        || $actor->can('rate', $discussion)
-                        || $discussion->rating_disabled
-                    ) {
-                        return false;
-                    }
-                    $policy = resolve(\TryHackX\TopicRating\Access\RatingPolicy::class);
-                    if ($policy->actorBypassesGlobal($actor)) {
-                        return false;
-                    }
-                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-                    return ! (bool) $settings->get('tryhackx-topic-rating.allow_unactivated', false);
-                }),
-            Schema\Str::make('ratingDisplayMode')
-                ->get(function (Discussion $discussion, Context $context) {
-                    $actor = $context->getActor();
-                    $policy = resolve(\TryHackX\TopicRating\Access\RatingPolicy::class);
-
-                    // Tagless discussions with "allow rating on untagged
-                    // discussions" turned off are hidden entirely (regardless of
-                    // the restricted-display mode, and for everyone).
-                    if ($policy->ratingForcedHidden($discussion)) {
-                        return 'hidden';
-                    }
-
-                    // Those who can rate always see the widget (incl. bypassers).
-                    if ($actor->can('rate', $discussion)) {
-                        return 'rate';
-                    }
-
-                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-
-                    // Hide existing ratings on topics whose rating is fully
-                    // disabled (all tags disabled, or moderator-disabled) for
-                    // viewers who can't rate — prevents "rate it, then switch to a
-                    // disabled tag to lock the score" abuse. On by default; when
-                    // off such topics fall back to the restricted-display mode.
-                    if ((bool) $settings->get('tryhackx-topic-rating.hide_disabled_ratings', true)
-                        && $policy->isRatingDisabled($discussion)) {
-                        return 'hidden';
-                    }
-
-                    $mode = (string) $settings->get('tryhackx-topic-rating.display_when_restricted', 'readonly');
-                    if (! in_array($mode, ['readonly', 'hidden', 'message'], true)) {
-                        $mode = 'readonly';
-                    }
-                    return $mode;
-                }),
-            Schema\Boolean::make('canToggleRating')
-                ->get(fn (Discussion $discussion, Context $context) =>
-                    $context->getActor()->hasPermission('discussion.rate.toggle')
-                ),
-            Schema\Boolean::make('canResetRatings')
-                ->get(fn (Discussion $discussion, Context $context) =>
-                    $context->getActor()->hasPermission('discussion.rate.reset')
-                ),
-            Schema\Integer::make('userRating')
-                ->nullable()
-                ->get(function (Discussion $discussion, Context $context) {
-                    $actor = $context->getActor();
-                    if (!$actor->id) return null;
-                    $userRating = Rating::where('discussion_id', $discussion->id)
-                        ->where('user_id', $actor->id)
-                        ->first();
-                    return $userRating ? (int) $userRating->rating : null;
-                }),
-        ]),
+        ->fields(DiscussionRatingFields::class),
 
     // Custom API routes
     (new Extend\Routes('api'))
@@ -141,8 +58,7 @@ return [
         ->delete('/discussion-ratings', 'discussion-ratings.delete', Controller\DeleteRatingController::class)
         ->post('/discussions/{id}/toggle-rating', 'discussions.toggle-rating', Controller\ToggleRatingController::class)
         ->post('/discussions/{id}/reset-ratings', 'discussions.reset-ratings', Controller\ResetRatingsController::class)
-        ->get('/discussion-ratings/poll', 'discussion-ratings.poll', Controller\PollRatingController::class)
-        ->get('/tryhackx-topic-rating/tag-config', 'tryhackx-topic-rating.tag-config', Controller\GetTagConfigController::class),
+        ->get('/discussion-ratings/poll', 'discussion-ratings.poll', Controller\PollRatingController::class),
 
     (new Extend\Policy())
         ->modelPolicy(Discussion::class, RatingPolicy::class),
@@ -159,7 +75,10 @@ return [
         ->serializeToForum('tryhackxTopicRatingShowOnList', 'tryhackx-topic-rating.show_on_list', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingRateOnList', 'tryhackx-topic-rating.rate_on_list', 'boolval', true)
         ->serializeToForum('tryhackxTopicRatingDisplayWhenRestricted', 'tryhackx-topic-rating.display_when_restricted', 'strval', 'readonly')
-        ->serializeToForum('tryhackxTopicRatingBypassGroups', 'tryhackx-topic-rating.bypass_groups', 'strval', '["1"]')
+        // NB: bypass_groups is deliberately NOT serialized to the forum — the
+        // frontend never needs the raw group-id list (the backend already
+        // resolves canRate / ratingDisplayMode), and exposing it leaked which
+        // groups have privileged rating access to every visitor.
         // Discussion-list rating display style, separately for desktop and mobile.
         ->serializeToForum('tryhackxTopicRatingListStyleDesktop', 'tryhackx-topic-rating.list_style_desktop', $normalizeListStyle)
         ->serializeToForum('tryhackxTopicRatingListStyleMobile', 'tryhackx-topic-rating.list_style_mobile', $normalizeListStyle)

@@ -19,7 +19,10 @@ class PollRatingController implements RequestHandlerInterface
         $discussionId = intval(Arr::get($params, 'discussion_id', 0));
         $since = Arr::get($params, 'since');
 
-        $discussion = Discussion::findOrFail($discussionId);
+        // Only poll discussions the actor may see — otherwise aggregate ratings
+        // (and their existence) leak for private/restricted threads.
+        $actor = RequestUtil::getActor($request);
+        $discussion = Discussion::whereVisibleTo($actor)->findOrFail($discussionId);
 
         $result = [
             'ratingAverage' => (float) $discussion->rating_average,
@@ -30,7 +33,6 @@ class PollRatingController implements RequestHandlerInterface
             'ratingDisabled' => (bool) $discussion->rating_disabled,
         ];
 
-        $actor = RequestUtil::getActor($request);
         if ($actor->id) {
             $userRating = Rating::where('discussion_id', $discussionId)
                 ->where('user_id', $actor->id)

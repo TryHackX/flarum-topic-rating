@@ -7,4 +7,5 @@ Object.assign(Rating.prototype, {
     createdAt: Model.attribute('createdAt', Model.transformDate),
     updatedAt: Model.attribute('updatedAt', Model.transformDate),
     user: Model.hasOne('user'),
+    discussion: Model.hasOne('discussion'),
 });

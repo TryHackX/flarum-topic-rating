@@ -53,23 +53,11 @@ class CreateRatingController implements RequestHandlerInterface
             $rating->save();
         }
 
-        $this->recalculate($discussion);
+        Rating::recalculate($discussion);
 
         return new JsonResponse([
             'rating' => (int) $rating->rating,
             'discussionId' => $discussionId,
         ]);
-    }
-
-    protected function recalculate(Discussion $discussion): void
-    {
-        $ratings = Rating::where('discussion_id', $discussion->id);
-        $discussion->rating_count = $ratings->count();
-        $discussion->rating_average = $discussion->rating_count > 0
-            ? round($ratings->avg('rating') / 2, 2)
-            : 0;
-        $discussion->last_rated_at = Rating::where('discussion_id', $discussion->id)
-            ->max('updated_at');
-        $discussion->save();
     }
 }
