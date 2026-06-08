@@ -22,8 +22,7 @@ tryhackx-topic-rating:
         or "Allow groups" (only the selected groups can rate).
         When a main tag is Enabled or Allow groups, expand it to override individual sub-tags
         ("Inherit" = follow the parent).
-        When a discussion has multiple tags: any "Disabled" tag blocks rating (unless user has bypass).
-        Among the remaining tags, the most permissive wins.
+        When a discussion has multiple tags, the MOST PERMISSIVE setting wins — a single "Disabled" tag does NOT block rating if another of its tags allows it. A discussion is non-rateable only when ALL of its tags are "Disabled" (bypass groups can still rate).
       tag_admin_note: |
         Flarum hard-grants admins EVERY permission (including Bypass) — you can't uncheck it in the permission grid below. To control this for this extension, use the "Bypass tag restrictions" group picker below. Admin bypass is active only when the Admin group is selected.
       bypass_groups_label: Bypass tag restrictions
@@ -97,14 +96,13 @@ tryhackx-topic-rating:
       restricted: Rating is not available for your group on this topic.
 
     rating_count: "Ratings: {count}"
-    last_rated: "Last Rate:"
+    last_rated: "Last rated:"
     rating_restricted_message: Rating is not available for your group.
 
     controls:
       enable_rating: Enable Rating
       disable_rating: Disable Rating
       reset_ratings: Reset All Ratings
-      reset_confirm: Are you sure you want to delete all ratings for this discussion? This cannot be undone.
 
     reset_modal:
       title: Reset All Ratings
@@ -117,7 +115,6 @@ tryhackx-topic-rating:
       empty: No ratings yet.
       deleted_user: "[deleted]"
       updated_prefix: "updated "
-      rate_label: "Your rating:"
 
 # Shared avatar section, used by BOTH flarum-topic-rating and flarum-thumb-sliders.
 # Keep this block identical in both extensions' locale files so the strings are

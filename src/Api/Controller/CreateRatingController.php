@@ -44,13 +44,22 @@ class CreateRatingController implements RequestHandlerInterface
             ->where('user_id', $actor->id)
             ->first();
 
-        if ($rating) {
-            $rating->rating = $ratingValue;
-            $rating->save();
-        } else {
+        if (! $rating) {
             $rating = new Rating();
             $rating->discussion_id = $discussionId;
             $rating->user_id = $actor->id;
+        }
+        $rating->rating = $ratingValue;
+
+        try {
+            $rating->save();
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Lost a concurrent first-rate race for this (discussion, user) — two
+            // tabs racing the initial insert would otherwise 500 on the unique
+            // (discussion_id, user_id) index. The row now exists; update it.
+            $rating = Rating::where('discussion_id', $discussionId)
+                ->where('user_id', $actor->id)
+                ->firstOrFail();
             $rating->rating = $ratingValue;
             $rating->save();
         }

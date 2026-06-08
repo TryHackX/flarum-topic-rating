@@ -5,7 +5,14 @@ discussions with half-star precision — usable from **the discussion page
 *and* the discussion list**, with a live hover preview, polling refresh, and
 fine-grained admin / permission controls.
 
-> **Latest (2.3.0):** Finer **per-tag control** — a dedicated list for
+> **Latest (2.4.3):** Accuracy & robustness pass — the per-tag permissions help
+> now correctly describes **most-permissive-wins** (a single *Disabled* tag does
+> *not* block rating if another of the discussion's tags allows it; a topic is
+> non-rateable only when **all** its tags are disabled), the Polish *"last rated"*
+> label is translated, and concurrent first-time rating writes no longer risk a
+> duplicate-key error. See the [changelog](CHANGELOG.md).
+>
+> **2.4.x:** Finer **per-tag control** — a dedicated list for
 > **standalone secondary tags** (topics with no primary tag; opt-in, default
 > off), a switch for **tagless** discussions, an option to **hide empty stars**
 > from non-voters, and one to **hide "frozen" ratings** on topics that became
@@ -214,8 +221,8 @@ It registers these endpoints:
 
 ## Compatibility
 
-- Flarum `>=1.8.0 <3.0.0`
-- The `2.x` branch targets Flarum 2.0+.
+- This (`2.x`) release line requires **Flarum 2.0+** and **PHP 8.3+** (matching `flarum/core`'s own requirement).
+- The legacy `1.x` branch supports Flarum 1.8+ but is no longer actively developed.
 - Per-tag features auto-activate only when `flarum/tags` is enabled.
 
 ## Links

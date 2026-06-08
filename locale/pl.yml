@@ -12,7 +12,7 @@ tryhackx-topic-rating:
       allow_unactivated_label: Zezwól nieaktywowanym kontom na ocenianie
       allow_unactivated_help: Po włączeniu użytkownicy, którzy nie potwierdzili adresu e-mail, mogą oceniać tematy.
       show_moderation_controls_label: Zawsze pokazuj kontrolki oceniania w menu tematu
-      show_moderation_controls_help: Domyślnie „Disable Rating" i „Reset All Ratings" pojawiają się w menu ⋮ tematu tylko gdy ocena jest widoczna na danym temacie — są ukryte, gdy tagi nie pozwalają tam oceniać (zarządzanie ukrytą oceną nic nie wnosi). Włącz, aby pokazywać je zawsze — np. do zarządzania ocenami tam, gdzie widżet jest ukryty. Nadal wymaga odpowiednich uprawnień moderacji. Domyślnie wyłączone.
+      show_moderation_controls_help: Domyślnie „Wyłącz ocenę" i „Wyczyść wszystkie oceny" pojawiają się w menu ⋮ tematu tylko gdy ocena jest widoczna na danym temacie — są ukryte, gdy tagi nie pozwalają tam oceniać (zarządzanie ukrytą oceną nic nie wnosi). Włącz, aby pokazywać je zawsze — np. do zarządzania ocenami tam, gdzie widżet jest ukryty. Nadal wymaga odpowiednich uprawnień moderacji. Domyślnie wyłączone.
 
       tag_config_label: Uprawnienia oceniania per tag
       tag_config_help: |
@@ -22,8 +22,7 @@ tryhackx-topic-rating:
         lub "Wybrane grupy" (tylko wskazane grupy mogą oceniać).
         Gdy główny tag ma stan "Włączone" lub "Wybrane grupy", rozwiń go aby nadpisać poszczególne sub-tagi
         ("Dziedzicz" = zgodnie z rodzicem).
-        Gdy dyskusja ma wiele tagów: jakikolwiek "Wyłączony" tag blokuje ocenianie (chyba że user ma bypass).
-        Wśród pozostałych tagów wygrywa najbardziej permisywny.
+        Gdy dyskusja ma wiele tagów, wygrywa NAJBARDZIEJ PERMISYWNE ustawienie — pojedynczy tag "Wyłączony" NIE blokuje oceniania, jeśli inny z tagów tematu na nie pozwala. Temat jest nieoceniany dopiero gdy WSZYSTKIE jego tagi są "Wyłączone" (grupy z omijaniem nadal mogą oceniać).
       tag_admin_note: |
         Flarum twardo daje administratorom WSZYSTKIE uprawnienia (w tym omijanie) — nie da się tego cofnąć w siatce uprawnień poniżej. Aby kontrolować to dla tego rozszerzenia, użyj wyboru grup w ustawieniu "Omijanie blokad tag-owych" poniżej. Omijanie blokad przez administratorów będzie działać tylko wtedy, gdy grupa Administratorzy jest jawnie wybrana.
       bypass_groups_label: Omijanie blokad tag-owych
@@ -97,14 +96,13 @@ tryhackx-topic-rating:
       restricted: Ocenianie nie jest dostępne dla twojej grupy w tym temacie.
 
     rating_count: "Oceny: {count}"
-    last_rated: "Last Rate:"
+    last_rated: "Ostatnia ocena:"
     rating_restricted_message: Ocenianie nie jest dostępne dla twojej grupy.
 
     controls:
       enable_rating: Włącz ocenę
       disable_rating: Wyłącz ocenę
       reset_ratings: Wyczyść wszystkie oceny
-      reset_confirm: Czy na pewno chcesz usunąć wszystkie oceny tego tematu? Tej operacji nie można cofnąć.
 
     reset_modal:
       title: Resetowanie ocen
@@ -117,7 +115,6 @@ tryhackx-topic-rating:
       empty: Brak ocen.
       deleted_user: "[usunięty]"
       updated_prefix: "zmieniono "
-      rate_label: "Twoja ocena:"
 
 # Wspólna sekcja awatarów, używana przez flarum-topic-rating i flarum-thumb-sliders.
 # Tłumaczenia są globalne, więc te klucze są dostępne także na stronie ustawień

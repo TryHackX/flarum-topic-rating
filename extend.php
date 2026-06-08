@@ -42,7 +42,8 @@ return [
 
     (new Extend\Model(Discussion::class))
         ->hasMany('ratings', Rating::class, 'discussion_id')
-        ->cast('last_rated_at', 'datetime'),
+        ->cast('last_rated_at', 'datetime')
+        ->cast('rating_disabled', 'boolean'),
 
     // Register RatingResource (handles listing via Index endpoint)
     (new Extend\ApiResource(RatingResource::class)),

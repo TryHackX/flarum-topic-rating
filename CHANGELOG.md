@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.3] - 2026-06-08
+
+> Accuracy, i18n and robustness fixes from a follow-up audit pass. No new
+> migrations. The shared discussion-list layout module was hardened (clobbered-global
+> guard + version-drift warning) and stays byte-identical with `flarum-thumb-sliders`,
+> which ships the same change in its **2.1.1** release (coordinated). The shared
+> avatar section is unchanged.
+
+### Fixed
+- **Per-tag permissions help now matches the actual policy.** The `tag_config_help`
+  text (admin panel, EN + PL) claimed *"any Disabled tag blocks rating"*, but the
+  policy is **most-permissive-wins**: a single `Disabled` tag does not block rating
+  when another of the discussion's tags allows it (a topic is non-rateable only when
+  *all* of its tags resolve to Disabled; bypass groups can still rate). Reworded to
+  match the code and the README's "how the policy decides" section.
+- **Polish localisation:** the discussion-page *"Last rated:"* label
+  (`forum.last_rated`) was left untranslated as `"Last Rate:"`; it now reads
+  *"Ostatnia ocena:"*. The English string was also tidied from *"Last Rate:"* to
+  *"Last rated:"*.
+- **Polish moderation-controls help** referenced the English button captions
+  *"Disable Rating" / "Reset All Ratings"*; it now uses the Polish labels actually
+  shown in the UI.
+
+### Changed
+- **Concurrent first-time rating writes are race-safe.** `CreateRatingController`
+  used a find-then-insert that could hit the unique `(discussion_id, user_id)` index
+  and 500 if the same user raced two initial submits; it now catches the
+  unique-constraint violation and falls back to an update.
+- `rating_disabled` is now cast to `boolean` on the `Discussion` model (alongside the
+  existing `last_rated_at` datetime cast) instead of relying on call-site casts.
+- **Shared discussion-list layout module hardened** (byte-identical with
+  `flarum-thumb-sliders`): the idempotency guard tolerates a clobbered
+  `window.tryhackxDLL` global (non-object) and warns in the console on a
+  `LAYOUT_VERSION` mismatch between installed copies — catching a partial
+  multi-extension upgrade instead of silently using the older layout. Rendered
+  layout unchanged (`LAYOUT_VERSION` stays 5).
+
+### Removed
+- Dropped two unused locale keys (`forum.controls.reset_confirm`,
+  `forum.ratings_modal.rate_label`) in both EN and PL.
+
+### Docs
+- README: corrected the "Latest" callout (was stuck on 2.3.0) and the Compatibility
+  section (this 2.x line needs Flarum 2.0+ / PHP 8.3+; the 1.8+ support is the
+  separate, legacy 1.x branch).
+
 ## [2.4.2] - 2026-06-07
 
 > Follow-up hardening from a second audit pass.
