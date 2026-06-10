@@ -1,12 +1,23 @@
 {
     "name": "tryhackx/flarum-topic-rating",
-    "description": "5-star topic rating system for Flarum discussions",
-    "keywords": ["flarum", "rating", "stars", "discussion"],
+    "description": "Interactive 5-star topic rating system for Flarum with half-star precision, live hover previews, real-time polling updates, per-device list styles, and advanced per-tag permissions.",
+    "keywords": [
+        "flarum",
+        "extension",
+        "rating",
+        "stars",
+        "5-star",
+        "half-star",
+        "discussion",
+        "tag-permissions",
+        "moderation",
+        "review"
+    ],
     "type": "flarum-extension",
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "flarum/core": "^2.0"
+        "flarum/core": "^2.0.0-rc.1"
     },
     "authors": [
         {
@@ -15,6 +26,10 @@
             "homepage": "https://github.com/TryHackX"
         }
     ],
+    "support": {
+        "issues": "https://github.com/TryHackX/flarum-topic-rating/issues",
+        "source": "https://github.com/TryHackX/flarum-topic-rating"
+    },
     "autoload": {
         "psr-4": {
             "TryHackX\\TopicRating\\": "src/"
@@ -23,11 +38,14 @@
     "extra": {
         "flarum-extension": {
             "title": "Topic Rating",
+            "category": "feature",
             "icon": {
                 "name": "fas fa-star",
-                "backgroundColor": "#f0ad4e",
-                "color": "#fff"
+                "color": "#ffffff",
+                "backgroundColor": "#f0ad4e"
             }
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
