@@ -43,10 +43,15 @@ class Rating extends AbstractModel
         // builder (not Eloquent) also avoids auto-touching discussions.updated_at.
         $connection = $discussion->getConnection();
 
+        // The aggregates are correlated subqueries against the row being updated
+        // (discussion_ratings.discussion_id = discussions.id) — the id is bound
+        // once in the WHERE below and never interpolated into the raw SQL. Still a
+        // single atomic UPDATE, so concurrent rate/unrate can't interleave a
+        // read-modify-write.
         $connection->table('discussions')->where('id', $id)->update([
-            'rating_count'   => $connection->raw("(SELECT COUNT(*) FROM discussion_ratings WHERE discussion_id = $id)"),
-            'rating_average' => $connection->raw("(SELECT COALESCE(ROUND(AVG(rating) / 2, 2), 0) FROM discussion_ratings WHERE discussion_id = $id)"),
-            'last_rated_at'  => $connection->raw("(SELECT MAX(updated_at) FROM discussion_ratings WHERE discussion_id = $id)"),
+            'rating_count'   => $connection->raw('(SELECT COUNT(*) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
+            'rating_average' => $connection->raw('(SELECT COALESCE(ROUND(AVG(rating) / 2, 2), 0) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
+            'last_rated_at'  => $connection->raw('(SELECT MAX(updated_at) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
         ]);
     }
 }

@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.7] - 2026-06-13
+
+> Hardening + cleanup from a third audit pass. No new migrations, no breaking
+> changes, and no change to the shared discussion-list layout module — independent
+> of `flarum-thumb-sliders`, no coordinated update needed.
+
+### Changed
+- **`Rating::recalculate()` no longer interpolates the discussion id into raw
+  SQL.** The three aggregate subqueries now correlate against the row being
+  updated (`discussion_ratings.discussion_id = discussions.id`) instead of
+  embedding `$id` via string interpolation; the id is bound once in the `WHERE`
+  clause and no raw value substitution remains. Still a single atomic
+  `UPDATE … (SELECT …)`, so the race-safety is unchanged. (The `$id` was already
+  int-cast and guarded — this removes the interpolation pattern entirely so a
+  future edit can't reintroduce a risk.) Verified the rewrite recomputes the
+  correct count/average on MySQL.
+
+### Robustness
+- **Background rating polls now surface genuine server errors.** Both the
+  discussion-page poll (`RatingPolling`) and the ratings-modal poll previously
+  discarded every failure (`errorHandler: () => {}`); they now log unexpected
+  `5xx` responses to the console for diagnosability, while still never alerting
+  the user (an alert every poll interval would be noise) and still ignoring the
+  `401/403/404` that are expected in a polling context (session expiry, deleted
+  discussion). `RatingPolling.poll()` also gained the `.catch()` it was missing,
+  so a failed poll no longer leaves an unhandled promise rejection.
+
+### Notes
+- The recurring high-severity claim that **the moderator toggle/reset endpoints
+  404** (because they read the id from query params, not route attributes) is
+  **still a false positive** — re-verified live this round: `POST
+  /api/discussions/9/toggle-rating` returns `200`. Flarum's `RouteHandlerFactory`
+  merges route parameters into the query params, so `getQueryParams()['id']` is
+  correct. The suggested "fix" `$request->getAttribute('id')` would actually
+  **break** the endpoints (Flarum stores path params under the `routeParameters`
+  attribute, not as individual request attributes), so it was deliberately not
+  applied.
+- The claim that the facade comment in `Rating::recalculate()` is wrong (that
+  Flarum 2.x registers Laravel facades) remains **incorrect** — `DB::table()`
+  throws *"A facade root has not been set"* in this build. The unbounded
+  `actorRatingsFor()` preload is unchanged for the reasons in the 2.4.5 / 2.4.6
+  notes (single indexed query; no per-page bound exposed by the field-serialiser
+  context).
+
 ## [2.4.6] - 2026-06-12
 
 > Robustness fix from a follow-up audit pass. No new migrations, no breaking

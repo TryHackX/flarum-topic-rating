@@ -57,7 +57,15 @@ class RatingPolling {
             params: {
                 discussion_id: discussion.id(),
             },
-            errorHandler: () => {},
+            // Background poll: never alert on failure (that would pop an error
+            // every interval), but surface genuine server errors (5xx) to the
+            // console so they stay diagnosable. 401/403/404 are expected/ignorable
+            // in a polling context (e.g. session expiry, discussion gone).
+            errorHandler: (e) => {
+                if (e && e.status >= 500 && typeof console !== 'undefined') {
+                    console.warn('[topic-rating] rating poll failed (status ' + e.status + ')');
+                }
+            },
         }).then((data) => {
             const oldAvg = discussion.ratingAverage();
             const oldCount = discussion.ratingCount();
@@ -74,7 +82,7 @@ class RatingPolling {
                 });
                 m.redraw();
             }
-        });
+        }).catch(() => {});
     }
 }
 

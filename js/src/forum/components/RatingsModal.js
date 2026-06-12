@@ -242,7 +242,13 @@ export default class RatingsModal extends Modal {
                 discussion_id: this.discussion.id(),
                 since: this.lastPollTime,
             },
-            errorHandler: () => {},
+            // Background poll: never alert on failure, but surface genuine server
+            // errors (5xx) to the console; 401/403/404 are ignorable here.
+            errorHandler: (e) => {
+                if (e && e.status >= 500 && typeof console !== 'undefined') {
+                    console.warn('[topic-rating] ratings-modal poll failed (status ' + e.status + ')');
+                }
+            },
         }).then((data) => {
             if (data && data.hasNewRatings) {
                 this.lastPollTime = new Date().toISOString();
