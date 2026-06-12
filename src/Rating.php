@@ -37,11 +37,11 @@ class Rating extends AbstractModel
             return;
         }
 
-        // Use the model's connection directly — Flarum does NOT register
-        // Laravel's global facades, so `DB::table()` / `DB::raw()` throw
-        // "A facade root has not been set". Going through the base query
+        // Use the discussion's own DB connection directly — Flarum does NOT
+        // register Laravel's global facades, so `DB::table()` / `DB::raw()`
+        // throw "A facade root has not been set". Going through the base query
         // builder (not Eloquent) also avoids auto-touching discussions.updated_at.
-        $connection = (new self())->getConnection();
+        $connection = $discussion->getConnection();
 
         $connection->table('discussions')->where('id', $id)->update([
             'rating_count'   => $connection->raw("(SELECT COUNT(*) FROM discussion_ratings WHERE discussion_id = $id)"),

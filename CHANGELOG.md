@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.5] - 2026-06-12
+
+> Performance, i18n and internal-cleanup pass from a follow-up audit. No new
+> migrations, no breaking changes, and **no change to the shared discussion-list
+> layout module** (`LAYOUT_VERSION` stays 5) — this release is independent of
+> `flarum-thumb-sliders` and needs no coordinated update.
+
+### Performance
+- **Live polling now pauses while the browser tab is hidden.** Both the
+  discussion-page poll (`RatingPolling`, every 8 s) and the ratings-modal poll
+  (every 5 s) skip their request when `document.hidden` is true and resume on the
+  next tick once the tab is visible again. Readers routinely leave discussion
+  tabs open in the background; previously every one of them kept hitting
+  `GET /discussion-ratings/poll` on a fixed interval — a large amount of server
+  load on a busy forum for data nobody is looking at. The interval keeps ticking
+  (a cheap no-op while hidden), so no listener lifecycle is added and active tabs
+  behave exactly as before.
+
+### Changed
+- **Backend rating-validation messages are now translatable.** The two
+  `ValidationException` strings in `CreateRatingController` ("rating must be
+  between 1 and 10", "rating is disabled for this discussion") were hardcoded in
+  English; they now come from new `tryhackx-topic-rating.api.*` locale keys
+  (EN + PL) resolved through an injected `TranslatorInterface`. These messages
+  are normally unreachable through the UI (the frontend guards the range and the
+  disabled state), so this is a consistency fix for the defensive 422 path.
+- **`Rating::recalculate()` uses the discussion's own DB connection** instead of
+  instantiating a throwaway `Rating` model just to obtain one
+  (`(new self())->getConnection()` → `$discussion->getConnection()`). Same
+  default connection, same race-safe atomic `UPDATE … (SELECT …)` — the aggregate
+  recalculation is unchanged; this only drops the needless instance.
+
+### Notes
+- Two audit suggestions were **intentionally not applied**: moving the four
+  denormalised rating columns off the `discussions` table, and bounding the
+  per-request `userRating` preload. The columns follow Flarum core's own
+  denormalisation pattern and are read on the hot discussion list, where a side
+  table would force a join; the preload is already a single indexed query (the
+  N+1 was removed in 2.4.0), with no clean per-page bound exposed by the
+  field-serialiser context.
+
 ## [2.4.3] - 2026-06-08
 
 > Accuracy, i18n and robustness fixes from a follow-up audit pass. No new

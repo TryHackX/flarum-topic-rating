@@ -231,6 +231,10 @@ export default class RatingsModal extends Modal {
     }
 
     pollForNewRatings() {
+        // Don't poll while the tab is hidden (see RatingPolling.poll) — the modal
+        // can sit open in a backgrounded tab; resume on the next tick once visible.
+        if (typeof document !== 'undefined' && document.hidden) return;
+
         app.request({
             method: 'GET',
             url: app.forum.attribute('apiUrl') + '/discussion-ratings/poll',

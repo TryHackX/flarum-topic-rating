@@ -40,6 +40,12 @@ class RatingPolling {
     poll(discussion) {
         if (this.paused) return;
 
+        // Skip the request while the tab is in the background. Readers leave
+        // discussion tabs open, and a fixed-interval poll on every hidden tab is
+        // pure server load for data nobody is looking at. The interval keeps
+        // ticking (a cheap no-op) and resumes on the next tick once visible.
+        if (typeof document !== 'undefined' && document.hidden) return;
+
         if (!discussion || discussion.id() !== this.discussionId) {
             this.stop();
             return;

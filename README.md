@@ -5,7 +5,12 @@ discussions with half-star precision — usable from **the discussion page
 *and* the discussion list**, with a live hover preview, polling refresh, and
 fine-grained admin / permission controls.
 
-> **Latest (2.4.3):** Accuracy & robustness pass — the per-tag permissions help
+> **Latest (2.4.5):** Performance & polish — the live rating poll now **pauses
+> while the browser tab is hidden** (discussion page *and* ratings modal), cutting
+> background request load on busy forums; backend rating-validation messages are
+> now translatable (EN + PL). See the [changelog](CHANGELOG.md).
+>
+> **2.4.3:** Accuracy & robustness pass — the per-tag permissions help
 > now correctly describes **most-permissive-wins** (a single *Disabled* tag does
 > *not* block rating if another of the discussion's tags allows it; a topic is
 > non-rateable only when **all** its tags are disabled), the Polish *"last rated"*

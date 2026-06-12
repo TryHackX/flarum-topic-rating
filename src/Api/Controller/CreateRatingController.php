@@ -5,6 +5,7 @@ namespace TryHackX\TopicRating\Api\Controller;
 use TryHackX\TopicRating\Rating;
 use Flarum\Discussion\Discussion;
 use Flarum\Http\RequestUtil;
+use Flarum\Locale\TranslatorInterface;
 use Illuminate\Support\Arr;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
@@ -13,6 +14,11 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class CreateRatingController implements RequestHandlerInterface
 {
+    public function __construct(
+        protected TranslatorInterface $translator
+    ) {
+    }
+
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
@@ -24,7 +30,7 @@ class CreateRatingController implements RequestHandlerInterface
 
         if ($ratingValue < 1 || $ratingValue > 10) {
             throw new \Flarum\Foundation\ValidationException([
-                'rating' => 'Rating must be between 1 and 10 (0.5-5.0 stars).',
+                'rating' => $this->translator->trans('tryhackx-topic-rating.api.rating_out_of_range'),
             ]);
         }
 
@@ -36,7 +42,7 @@ class CreateRatingController implements RequestHandlerInterface
 
         if ($discussion->rating_disabled) {
             throw new \Flarum\Foundation\ValidationException([
-                'rating' => 'Rating is disabled for this discussion.',
+                'rating' => $this->translator->trans('tryhackx-topic-rating.api.rating_disabled'),
             ]);
         }
 

@@ -116,6 +116,12 @@ tryhackx-topic-rating:
       deleted_user: "[deleted]"
       updated_prefix: "updated "
 
+  # Backend validation messages (shown via the 422 response if a write slips past
+  # the frontend guards). Kept translatable rather than hardcoded in the controller.
+  api:
+    rating_out_of_range: Rating must be between 1 and 10 (0.5-5.0 stars).
+    rating_disabled: Rating is disabled for this discussion.
+
 # Shared avatar section, used by BOTH flarum-topic-rating and flarum-thumb-sliders.
 # Keep this block identical in both extensions' locale files so the strings are
 # present whichever extension is installed (duplicate keys merge harmlessly).

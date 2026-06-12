@@ -116,6 +116,12 @@ tryhackx-topic-rating:
       deleted_user: "[usunięty]"
       updated_prefix: "zmieniono "
 
+  # Komunikaty walidacji z backendu (pokazywane przez odpowiedź 422, gdyby zapis
+  # ominął zabezpieczenia frontendu). Trzymane jako tłumaczenie, nie na sztywno w kontrolerze.
+  api:
+    rating_out_of_range: Ocena musi mieścić się w zakresie od 1 do 10 (0.5-5.0 gwiazdki).
+    rating_disabled: Ocenianie jest wyłączone dla tego tematu.
+
 # Wspólna sekcja awatarów, używana przez flarum-topic-rating i flarum-thumb-sliders.
 # Tłumaczenia są globalne, więc te klucze są dostępne także na stronie ustawień
 # Thumb Sliders, gdy oba rozszerzenia są zainstalowane.
