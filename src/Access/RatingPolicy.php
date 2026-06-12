@@ -347,7 +347,17 @@ class RatingPolicy extends AbstractPolicy
                 return $tags;
             }
             return $discussion->tags()->with('parent.parent')->get();
+        } catch (\PDOException $e) {
+            // A genuine database failure (lost connection, a missing column after
+            // a botched migration, …) must surface and stay diagnosable — not be
+            // silently masked as "no tags", which would quietly deny rating. The
+            // wider request is failing anyway. (QueryException extends PDOException,
+            // so both wrapped and raw driver errors are covered.)
+            throw $e;
         } catch (\Throwable $e) {
+            // Tags relation genuinely unavailable / an unexpected shape (e.g. Tags
+            // not installed → BadMethodCallException via the magic relation): degrade
+            // gracefully so a tag hiccup never 500s the whole discussion list.
             return collect();
         }
     }

@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.6] - 2026-06-12
+
+> Robustness fix from a follow-up audit pass. No new migrations, no breaking
+> changes, **no frontend/asset changes** (PHP only — `js/dist` untouched), and no
+> change to the shared discussion-list layout module — independent of
+> `flarum-thumb-sliders`, no coordinated update needed.
+
+### Fixed
+- **`RatingPolicy::loadDiscussionTags()` no longer swallows genuine database
+  errors.** Its defensive `catch (\Throwable)` (a safety net for the magic `tags`
+  relation) also masked real failures — a lost DB connection or a missing column
+  after a botched migration was silently turned into "no tags", quietly denying
+  rating on tagged discussions instead of surfacing a diagnosable error. Genuine
+  database errors (`\PDOException`, which `QueryException` extends) are now
+  re-thrown; only non-database problems still degrade gracefully to an empty tag
+  set, so a tag hiccup never 500s the whole discussion list. No behaviour change
+  in normal operation.
+
+### Notes
+- Several audit findings were investigated and **deliberately not changed**:
+  - *"Moderator toggle/reset endpoints are broken (read the id from the query
+    string, not route attributes → 404)."* **Not a bug** — Flarum's
+    `RouteHandlerFactory` merges route parameters into the query params before the
+    controller runs (`withQueryParams(array_merge(...))`), so
+    `getQueryParams()['id']` is correct. Verified in core and with a live
+    `POST /api/discussions/{id}/toggle-rating` returning `200`.
+  - *"`Rating::recalculate()`'s comment about facades is wrong — Flarum 2.x
+    registers Laravel facades."* **The comment is correct** — `DB::table()` throws
+    *"A facade root has not been set"* in this build (verified); facades are not
+    registered. The intentional, guarded `$id` int-cast interpolation stays (the
+    correlated-subquery `UPDATE` can't bind in the SET clause; no injection risk).
+  - The unbounded `actorRatingsFor()` preload (single indexed query — see 2.4.5
+    Notes), the legacy global `discussion.rate.bypass` permission (never exposed in
+    the permission grid; the historical migrations are kept intentionally), and the
+    byte-identical shared layout module (deliberate, runtime drift-guarded) are
+    unchanged.
+
 ## [2.4.5] - 2026-06-12
 
 > Performance, i18n and internal-cleanup pass from a follow-up audit. No new
