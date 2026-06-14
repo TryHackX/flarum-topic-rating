@@ -16,7 +16,7 @@ export default class RatingsModal extends Modal {
         // Seed from the discussion's own count so the title never shows
         // "undefined" before the list (and its meta) has loaded.
         this.total = this.discussion.ratingCount() || 0;
-        this.pollInterval = null;
+        this.pollTimeout = null;
         this.lastPollTime = new Date().toISOString();
 
         // Hold the page-level RatingPolling while we're open — this modal runs
@@ -217,23 +217,43 @@ export default class RatingsModal extends Modal {
         });
     }
 
+    // Self-scheduling poll with ±20% jitter and exponential back-off, mirroring
+    // RatingPolling — so many clients opening this modal on a trending discussion
+    // don't fire in lockstep (a synchronized burst), and a failing endpoint isn't
+    // hammered. The base cadence is faster (5s) than the page poll since the modal
+    // is foreground and short-lived.
     startPolling() {
-        this.pollInterval = setInterval(() => {
-            this.pollForNewRatings();
-        }, 5000);
+        this.pollErrorStreak = 0;
+        this.pollingStopped = false;
+        this.scheduleNextPoll();
+    }
+
+    scheduleNextPoll() {
+        if (this.pollingStopped) return;
+
+        const base = 5000 * Math.min(Math.pow(2, this.pollErrorStreak), 8); // back-off, cap 8×
+        const delay = base * (0.8 + Math.random() * 0.4); // ±20% jitter
+
+        this.pollTimeout = setTimeout(() => this.pollForNewRatings(), delay);
     }
 
     stopPolling() {
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
+        this.pollingStopped = true;
+        if (this.pollTimeout) {
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = null;
         }
     }
 
     pollForNewRatings() {
+        this.pollTimeout = null;
+
         // Don't poll while the tab is hidden (see RatingPolling.poll) — the modal
         // can sit open in a backgrounded tab; resume on the next tick once visible.
-        if (typeof document !== 'undefined' && document.hidden) return;
+        if (typeof document !== 'undefined' && document.hidden) {
+            this.scheduleNextPoll();
+            return;
+        }
 
         app.request({
             method: 'GET',
@@ -250,12 +270,17 @@ export default class RatingsModal extends Modal {
                 }
             },
         }).then((data) => {
+            this.pollErrorStreak = 0;
             if (data && data.hasNewRatings) {
                 this.lastPollTime = new Date().toISOString();
                 this.total = data.ratingCount;
                 this.offset = 0;
                 this.loadRatings();
             }
-        }).catch(() => {});
+        }).catch(() => {
+            this.pollErrorStreak = Math.min(this.pollErrorStreak + 1, 8);
+        }).finally(() => {
+            this.scheduleNextPoll();
+        });
     }
 }

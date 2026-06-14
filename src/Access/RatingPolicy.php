@@ -10,19 +10,16 @@ use Flarum\User\User;
 
 class RatingPolicy extends AbstractPolicy
 {
-    protected SettingsRepositoryInterface $settings;
-    protected ExtensionManager $extensions;
-
     /** Per-request memoization (Gate caches policy instances within a request). */
     protected ?array $cachedTagConfig = null;
     protected ?array $cachedBypassGroups = null;
     /** @var array<int|string, array<int, string>> */
     protected array $cachedActorGroupIds = [];
 
-    public function __construct(SettingsRepositoryInterface $settings, ExtensionManager $extensions)
-    {
-        $this->settings = $settings;
-        $this->extensions = $extensions;
+    public function __construct(
+        protected SettingsRepositoryInterface $settings,
+        protected ExtensionManager $extensions
+    ) {
     }
 
     public function rate(User $actor, Discussion $discussion)

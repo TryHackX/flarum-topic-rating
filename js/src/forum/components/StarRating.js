@@ -312,6 +312,12 @@ export default class StarRating extends Component {
             m.redraw();
             // Let an embedding view (e.g. the ratings modal) react to the change.
             if (typeof this.attrs.onrated === 'function') this.attrs.onrated();
+        }).catch(() => {
+            // The rating write itself already succeeded; only this follow-up
+            // refresh failed. Re-render so the widget settles, and let the
+            // background poll reconcile the average — no unhandled rejection,
+            // no stuck state. (Flarum's default handler still surfaces the error.)
+            m.redraw();
         });
     }
 

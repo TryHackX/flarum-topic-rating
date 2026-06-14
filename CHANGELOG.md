@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.9] - 2026-06-13
+
+> Small polish follow-up to 2.4.8 (the last low-severity audit items). No new
+> migrations, no breaking changes, and no change to the shared discussion-list
+> layout module — independent of `flarum-thumb-sliders`.
+
+### Performance
+- **The ratings-modal poll now jitters and backs off too.** 2.4.8 gave the
+  discussion-page poll (`RatingPolling`) ±20% jitter + exponential back-off but left
+  the ratings-modal poll on a fixed 5s `setInterval`. The modal poll now uses the
+  same self-scheduling timeout (±20% jitter, back-off to ~40s on consecutive
+  errors), so many clients opening the modal on a trending discussion no longer fire
+  in lockstep. Base cadence (5s) and the hidden-tab pause are unchanged.
+
+### Robustness
+- **A failed post-rating refresh no longer leaves an unhandled rejection or a stuck
+  widget.** `StarRating.refreshDiscussion()` — the follow-up `GET` after a successful
+  rate/unrate — had no `.catch()`; on failure the promise rejected unhandled and the
+  widget didn't re-render. It now catches and re-renders, and the (jittered)
+  background poll reconciles the average shortly after — the rating write itself
+  already succeeded, so nothing is lost.
+
+### Changed
+- `RatingPolicy` now uses constructor property promotion for its injected
+  `SettingsRepositoryInterface` / `ExtensionManager`, matching the rest of the
+  codebase. Purely cosmetic — no behaviour change.
+
+### Notes
+- Two audit items were deliberately left as-is: **`RatingPolicy::rate()`'s length /
+  nesting** is not refactored — it's the core authorization method and extracting a
+  helper purely for line count risks a security regression for no functional gain;
+  and **`flarum-tsconfig`** is not added — it's dev/IDE-only (the build works without
+  it) and none of the sibling TryHackX extensions ship it, so adding it only here
+  would break suite consistency.
+
 ## [2.4.8] - 2026-06-13
 
 > Scale-hardening pass for large (millions-of-discussions) forums. **Two new
