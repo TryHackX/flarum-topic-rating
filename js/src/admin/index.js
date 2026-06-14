@@ -94,6 +94,14 @@ const adminExtender = new Extend.Admin()
         help: app.translator.trans('tryhackx-topic-rating.admin.settings.show_moderation_controls_help', {}, true),
         type: 'boolean',
     }))
+    .setting(() => ({
+        setting: 'tryhackx-topic-rating.poll_interval',
+        label: app.translator.trans('tryhackx-topic-rating.admin.settings.poll_interval_label', {}, true),
+        help: app.translator.trans('tryhackx-topic-rating.admin.settings.poll_interval_help', {}, true),
+        type: 'number',
+        min: 5,
+        max: 300,
+    }))
     // Per-device rating display style + cascading single-star options.
     .customSetting(() => m(RatingListDisplaySettings))
     // Shared avatar section (also present in Thumb Sliders; same setting keys).

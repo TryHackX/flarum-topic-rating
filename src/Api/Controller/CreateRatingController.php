@@ -3,6 +3,7 @@
 namespace TryHackX\TopicRating\Api\Controller;
 
 use TryHackX\TopicRating\Rating;
+use TryHackX\TopicRating\RatingRecalculator;
 use Flarum\Discussion\Discussion;
 use Flarum\Http\RequestUtil;
 use Flarum\Locale\TranslatorInterface;
@@ -15,7 +16,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 class CreateRatingController implements RequestHandlerInterface
 {
     public function __construct(
-        protected TranslatorInterface $translator
+        protected TranslatorInterface $translator,
+        protected RatingRecalculator $recalculator
     ) {
     }
 
@@ -70,7 +72,7 @@ class CreateRatingController implements RequestHandlerInterface
             $rating->save();
         }
 
-        Rating::recalculate($discussion);
+        $this->recalculator->recalculate($discussion);
 
         return new JsonResponse([
             'rating' => (int) $rating->rating,

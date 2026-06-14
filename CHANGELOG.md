@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.10] - 2026-06-14
+
+> Final low-severity audit polish on top of 2.4.9. One new admin setting (no
+> migration), no breaking changes, and no change to the shared discussion-list
+> layout module — independent of `flarum-thumb-sliders`.
+
+### Added
+- **Configurable discussion-page poll interval.** A new admin setting *Live update
+  interval (seconds)* (`tryhackx-topic-rating.poll_interval`, default 8, clamped
+  5–300) controls how often an open discussion page polls for new ratings, so large
+  forums can dial back per-visitor background load. `RatingPolling` reads it live —
+  with the existing ±20% jitter, exponential back-off and hidden-tab pause still on
+  top; the ratings-modal poll keeps its own faster cadence.
+
+### Changed
+- **Rating-aggregate recalculation extracted to a `RatingRecalculator` service.**
+  The atomic `UPDATE … (SELECT …)` that recomputes `rating_count` /
+  `rating_average` / `last_rated_at` moved out of the `Rating` AbstractModel into a
+  dedicated service (container-resolved, injected into the write controllers),
+  keeping the model free of raw SQL. Behaviour is identical — same single
+  race-safe statement, same correlated subqueries, same connection. The raw
+  aggregate UPDATE has no Eloquent equivalent, so it's now an explicit, documented,
+  scoped exception rather than a model helper.
+- **`DeleteRatingController` checks discussion visibility before the rating
+  lookup**, matching `CreateRatingController`'s ordering — a restricted or missing
+  discussion now returns 404 consistently before any rating row is touched. No
+  security or behaviour change (the `user_id` constraint already scoped the lookup
+  to the actor's own row).
+
 ## [2.4.9] - 2026-06-13
 
 > Small polish follow-up to 2.4.8 (the last low-severity audit items). No new

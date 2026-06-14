@@ -7,11 +7,20 @@ import app from 'flarum/forum/app';
 //   - consecutive failures back off exponentially up to MAX_BACKOFF so a
 //     struggling server isn't hammered, recovering to the base rate on success;
 //   - a hidden tab (and the modal-held pause) skip the request entirely.
-// The base interval is deliberately left at 8s (responsiveness unchanged); the
-// load reductions above are what matter at scale.
-const BASE_INTERVAL = 8000;
+// The base interval is admin-configurable (default 8s) so large forums can dial
+// back per-visitor load; the spread/back-off above are what bound the worst case.
+const DEFAULT_INTERVAL = 8000;
 const JITTER = 0.2; // ±20%
-const MAX_BACKOFF = 8; // up to 8× base (~64s) after repeated errors
+const MAX_BACKOFF = 8; // up to 8× base after repeated errors
+
+// Base poll interval (ms) from the admin setting (seconds, clamped 5–300), with an
+// 8s fallback. Read live so an admin change takes effect on the next tick once the
+// forum payload refreshes (page reload), without a rebuild.
+function baseIntervalMs() {
+    const raw = parseInt(app.forum.attribute('tryhackxTopicRatingPollInterval'), 10);
+    if (!raw || isNaN(raw)) return DEFAULT_INTERVAL;
+    return Math.max(5, Math.min(300, raw)) * 1000;
+}
 
 class RatingPolling {
     constructor() {
@@ -56,7 +65,7 @@ class RatingPolling {
         if (this.discussionId === null) return; // stopped
 
         const backoff = Math.min(Math.pow(2, this.errorStreak), MAX_BACKOFF);
-        const base = BASE_INTERVAL * backoff;
+        const base = baseIntervalMs() * backoff;
         const delay = base * (1 - JITTER + Math.random() * 2 * JITTER);
 
         this.timeout = setTimeout(() => this.poll(discussion), delay);

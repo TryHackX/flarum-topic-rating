@@ -94,6 +94,15 @@ return [
         // to the discussion's ⋮ controls menu. Handy for managing ratings when
         // the star widget is hidden. Default false = not shown in the menu.
         ->serializeToForum('tryhackxTopicRatingShowModerationControls', 'tryhackx-topic-rating.show_moderation_controls', 'boolval', false)
+        // Discussion-page live-poll base interval in seconds (clamped 5–300, default
+        // 8). Lets large forums dial back the per-visitor polling load. Read by
+        // RatingPolling.js; the modal poll keeps its own faster cadence.
+        ->serializeToForum('tryhackxTopicRatingPollInterval', 'tryhackx-topic-rating.poll_interval', function ($value) {
+            if ($value === null || $value === '') {
+                return 8;
+            }
+            return max(5, min(300, (int) $value));
+        })
         // Shared avatar-display mode (see note at top of file). No ->default().
         ->serializeToForum('tryhackxAvatarModeDesktop', 'tryhackx-avatars.mode_desktop', $normalizeAvatarMode)
         ->serializeToForum('tryhackxAvatarModeMobile', 'tryhackx-avatars.mode_mobile', $normalizeAvatarMode)
@@ -111,5 +120,6 @@ return [
         ->default('tryhackx-topic-rating.untagged_enabled', true)
         ->default('tryhackx-topic-rating.hide_empty_for_nonvoters', false)
         ->default('tryhackx-topic-rating.hide_disabled_ratings', true)
-        ->default('tryhackx-topic-rating.show_moderation_controls', false),
+        ->default('tryhackx-topic-rating.show_moderation_controls', false)
+        ->default('tryhackx-topic-rating.poll_interval', 8),
 ];
