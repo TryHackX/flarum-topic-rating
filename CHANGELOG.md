@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.8] - 2026-06-13
+
+> Scale-hardening pass for large (millions-of-discussions) forums. **Two new
+> migrations** — additive indexes, run `php flarum migrate`. No breaking changes
+> and no change to the shared discussion-list layout module — independent of
+> `flarum-thumb-sliders`.
+
+### Performance
+- **Discussion-page poll now jitters and backs off.** `RatingPolling` moved from a
+  fixed `setInterval` to a self-scheduling timeout: each delay carries ±20% jitter
+  so many concurrent readers don't poll in lockstep (avoids a synchronized
+  "thundering herd"), and consecutive failures back off exponentially (up to ~64s),
+  recovering to the base rate on success. The 8s base cadence and the hidden-tab
+  pause are unchanged.
+- **The viewer's rating preload is now bounded.** `DiscussionRatingFields` loaded
+  every rating the viewer had ever cast on each discussion-list render; it now caps
+  the bulk load at the 5000 most-recent ratings and resolves anything beyond that
+  with a single cached per-discussion lookup. Normal users (far below the cap) are
+  unaffected — still one indexed query — while a pathological voter with tens of
+  thousands of ratings can no longer hydrate an unbounded result set per request.
+  (Flarum 2.x exposes no list of the page's models inside a field getter — search
+  results are null there — so a page-scoped `whereIn` isn't available; the cap is
+  the bound that fits the resource layer.)
+- **Indexed the rating sort/filter columns on `discussions`** (two migrations:
+  `last_rated_at`, then `rating_average` + `rating_count`). The bundled
+  `flarum-homepage-blocks` discussion-list sorts/filter read these columns directly:
+  "rated in period" (`WHERE last_rated_at >= ?`), "Recently rated"
+  (`ORDER BY last_rated_at`), "Avg rating" (`ORDER BY rating_average`) and "Number
+  of ratings" (`ORDER BY rating_count`). On a forum with millions of rows those
+  predicates/orders would otherwise scan or filesort the whole table. This extension
+  owns the columns, so the indexes live here. Additive/online — but on a very large
+  `discussions` table the build can take a while; plan the migration accordingly.
+  (The opt-in, non-default "Steam DB" sort orders by a computed confidence
+  expression that no plain column index can serve; its output was verified correct,
+  and materialising it into an indexed column is deliberately deferred as a separate,
+  higher-risk change.)
+
+### Notes
+- The rating aggregate columns deliberately **stay on the `discussions` table** (an
+  audit suggested a companion table). The bundled homepage-blocks rating filter and
+  Steam-rating sort read `last_rated_at` / `rating_average` / `rating_count`
+  directly in `WHERE` / `ORDER BY` on the discussion query — a companion table would
+  force a join on that hot path. The scale fix is the indexes above, not a side table.
+- Audit items left unchanged: the silent `.catch` blocks in `StarRating` /
+  `RatingsModal` / `ResetRatingsModal` are **not** silent — those requests pass no
+  custom `errorHandler`, so Flarum's default handler already shows an error alert;
+  adding `app.alerts.show()` would double it. And `Rating::recalculate()` keeps the
+  base query-builder update (not `Discussion::where()->update()`, which would
+  auto-touch `discussions.updated_at` on every rating).
+
 ## [2.4.7] - 2026-06-13
 
 > Hardening + cleanup from a third audit pass. No new migrations, no breaking

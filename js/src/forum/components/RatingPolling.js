@@ -1,29 +1,42 @@
 import app from 'flarum/forum/app';
 
+// Cadence for the discussion-page rating poll. A self-scheduling timeout (rather
+// than a fixed setInterval) lets us spread load on busy/large forums:
+//   - ±JITTER randomises each delay so many concurrent clients don't poll in
+//     lockstep (avoids a synchronised "thundering herd" against the API);
+//   - consecutive failures back off exponentially up to MAX_BACKOFF so a
+//     struggling server isn't hammered, recovering to the base rate on success;
+//   - a hidden tab (and the modal-held pause) skip the request entirely.
+// The base interval is deliberately left at 8s (responsiveness unchanged); the
+// load reductions above are what matter at scale.
+const BASE_INTERVAL = 8000;
+const JITTER = 0.2; // ±20%
+const MAX_BACKOFF = 8; // up to 8× base (~64s) after repeated errors
+
 class RatingPolling {
     constructor() {
-        this.interval = null;
+        this.timeout = null;
         this.discussionId = null;
         this.paused = false;
+        this.errorStreak = 0;
     }
 
     start(discussion) {
         this.stop();
         this.discussionId = discussion.id();
         this.paused = false;
-
-        this.interval = setInterval(() => {
-            this.poll(discussion);
-        }, 8000);
+        this.errorStreak = 0;
+        this.scheduleNext(discussion);
     }
 
     stop() {
-        if (this.interval) {
-            clearInterval(this.interval);
-            this.interval = null;
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
         }
         this.discussionId = null;
         this.paused = false;
+        this.errorStreak = 0;
     }
 
     // Temporarily hold the page-level poll while the ratings modal is open: the
@@ -37,17 +50,32 @@ class RatingPolling {
         this.paused = false;
     }
 
+    // Schedule the next poll: base × exponential back-off (on consecutive errors),
+    // then ±JITTER so concurrent clients spread out instead of firing in lockstep.
+    scheduleNext(discussion) {
+        if (this.discussionId === null) return; // stopped
+
+        const backoff = Math.min(Math.pow(2, this.errorStreak), MAX_BACKOFF);
+        const base = BASE_INTERVAL * backoff;
+        const delay = base * (1 - JITTER + Math.random() * 2 * JITTER);
+
+        this.timeout = setTimeout(() => this.poll(discussion), delay);
+    }
+
     poll(discussion) {
-        if (this.paused) return;
+        this.timeout = null;
 
-        // Skip the request while the tab is in the background. Readers leave
-        // discussion tabs open, and a fixed-interval poll on every hidden tab is
-        // pure server load for data nobody is looking at. The interval keeps
-        // ticking (a cheap no-op) and resumes on the next tick once visible.
-        if (typeof document !== 'undefined' && document.hidden) return;
-
+        // Discussion changed or gone → stop the loop entirely.
         if (!discussion || discussion.id() !== this.discussionId) {
             this.stop();
+            return;
+        }
+
+        // Held by the modal, or the tab is in the background → skip the request
+        // but keep the loop alive so it resumes on the next tick. Readers leave
+        // discussion tabs open; polling a hidden tab is pure wasted server load.
+        if (this.paused || (typeof document !== 'undefined' && document.hidden)) {
+            this.scheduleNext(discussion);
             return;
         }
 
@@ -67,6 +95,8 @@ class RatingPolling {
                 }
             },
         }).then((data) => {
+            this.errorStreak = 0;
+
             const oldAvg = discussion.ratingAverage();
             const oldCount = discussion.ratingCount();
 
@@ -82,7 +112,15 @@ class RatingPolling {
                 });
                 m.redraw();
             }
-        }).catch(() => {});
+        }).catch(() => {
+            // errorHandler above already logged genuine 5xx; here we only count the
+            // failure for back-off and swallow the rejection.
+            this.errorStreak = Math.min(this.errorStreak + 1, MAX_BACKOFF);
+        }).finally(() => {
+            // Reschedule after each completed poll (success or failure), unless a
+            // stop() in the meantime cleared the discussion id.
+            this.scheduleNext(discussion);
+        });
     }
 }
 
