@@ -13,6 +13,8 @@ tryhackx-topic-rating:
       allow_unactivated_help: Po włączeniu użytkownicy, którzy nie potwierdzili adresu e-mail, mogą oceniać tematy.
       show_moderation_controls_label: Zawsze pokazuj kontrolki oceniania w menu tematu
       show_moderation_controls_help: Domyślnie „Wyłącz ocenę" i „Wyczyść wszystkie oceny" pojawiają się w menu ⋮ tematu tylko gdy ocena jest widoczna na danym temacie — są ukryte, gdy tagi nie pozwalają tam oceniać (zarządzanie ukrytą oceną nic nie wnosi). Włącz, aby pokazywać je zawsze — np. do zarządzania ocenami tam, gdzie widżet jest ukryty. Nadal wymaga odpowiednich uprawnień moderacji. Domyślnie wyłączone.
+      realtime_enabled_label: Aktualizacje ocen na żywo
+      realtime_enabled_help: Gdy włączone, otwarte strony tematów odpytują w tle, więc oceny aktualizują się niemal w czasie rzeczywistym. Wyłącz, aby całkowicie zatrzymać polling w tle — oceny odświeżą się wtedy tylko po akcji użytkownika lub przeładowaniu strony (lżej dla serwera). Domyślnie włączone.
       poll_interval_label: Interwał aktualizacji na żywo (sekundy)
       poll_interval_help: Jak często otwarta strona tematu sprawdza nowe oceny, w sekundach (5–300, domyślnie 8). Wyższe wartości zmniejszają obciążenie serwera na ruchliwych forach; średnia oceny aktualizuje się tylko nieco wolniej. Dotyczy strony tematu — okno z listą ocen ma własne, szybsze odświeżanie.
 

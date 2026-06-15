@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.11] - 2026-06-14
+
+> Adds an opt-out for live polling and makes the aggregate-recalculation raw SQL
+> table-prefix safe. No new migrations, no breaking changes, and no change to the
+> shared discussion-list layout module — independent of `flarum-thumb-sliders`.
+
+### Added
+- **"Live rating updates" toggle** (`tryhackx-topic-rating.realtime_enabled`,
+  default **on**). When off, no background polling runs at all — neither the
+  discussion-page poll nor the ratings-modal poll — so a forum that doesn't want
+  near-real-time rating updates can drop that load entirely. Ratings still load, and
+  still update on the user's own rate/unrate and on page reload. (Requested by a
+  user.) The poll-interval setting keeps applying while live updates are on.
+
+### Changed
+- **`RatingRecalculator` is now table-prefix safe.** Its atomic aggregate `UPDATE`
+  uses raw correlated subqueries; the query builder prefixes the outer
+  `table('discussions')` but not the raw subquery table names, so they now prepend
+  the connection's table prefix (`getTablePrefix()`). No effect on the default
+  (empty-prefix) install; fixes the recompute on installs configured with a table
+  prefix. (The reviewer's suggested `getTable()` does *not* include the prefix, so
+  it wouldn't have fixed this — `getTablePrefix()` is required.)
+
+### Docs
+- README: documented the new live-updates toggle and added a scaling tip — raise
+  the poll interval to 30–60 s, or turn live updates off, on forums with many
+  concurrent discussion-page viewers.
+
 ## [2.4.10] - 2026-06-14
 
 > Final low-severity audit polish on top of 2.4.9. One new admin setting (no

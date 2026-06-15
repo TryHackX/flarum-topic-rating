@@ -31,14 +31,20 @@ class RatingRecalculator
         // register Laravel's global facades, so `DB::table()` / `DB::raw()` throw
         // "A facade root has not been set". Going through the base query builder
         // (not Eloquent) also avoids auto-touching discussions.updated_at. The id
-        // is bound in the WHERE; the subqueries correlate on discussions.id, so no
-        // value is interpolated into the raw SQL.
+        // is bound in the WHERE and the subqueries correlate on discussions.id, so
+        // no user value is interpolated into the raw SQL.
         $connection = $discussion->getConnection();
 
+        // The query builder applies any configured table prefix to the outer
+        // ->table('discussions'), but the raw correlated subqueries must prefix the
+        // table names themselves or they'd break on a prefixed install. The prefix
+        // is trusted config (never user input), so interpolating it is safe.
+        $p = $connection->getTablePrefix();
+
         $connection->table('discussions')->where('id', $id)->update([
-            'rating_count'   => $connection->raw('(SELECT COUNT(*) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
-            'rating_average' => $connection->raw('(SELECT COALESCE(ROUND(AVG(rating) / 2, 2), 0) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
-            'last_rated_at'  => $connection->raw('(SELECT MAX(updated_at) FROM discussion_ratings WHERE discussion_id = discussions.id)'),
+            'rating_count'   => $connection->raw("(SELECT COUNT(*) FROM {$p}discussion_ratings WHERE discussion_id = {$p}discussions.id)"),
+            'rating_average' => $connection->raw("(SELECT COALESCE(ROUND(AVG(rating) / 2, 2), 0) FROM {$p}discussion_ratings WHERE discussion_id = {$p}discussions.id)"),
+            'last_rated_at'  => $connection->raw("(SELECT MAX(updated_at) FROM {$p}discussion_ratings WHERE discussion_id = {$p}discussions.id)"),
         ]);
     }
 }

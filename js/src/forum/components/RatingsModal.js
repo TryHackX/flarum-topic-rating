@@ -24,7 +24,11 @@ export default class RatingsModal extends Modal {
         RatingPolling.pause();
 
         this.loadRatings();
-        this.startPolling();
+        // Live updates can be disabled forum-wide; only poll when enabled. The
+        // ratings list still loads once either way.
+        if (app.forum.attribute('tryhackxTopicRatingRealtimeEnabled') !== false) {
+            this.startPolling();
+        }
     }
 
     onremove(vnode) {

@@ -145,6 +145,8 @@ Enable the extension in **Admin Panel → Extensions → Topic Rating**.
 | **Allow rating inside the modal** ² | Off | Adds an interactive rating control at the top of the ratings modal, so users can rate without leaving the list. |
 | **Avatars — Desktop** / **Mobile** ³ | Show avatar | Per device: *Show* / *Replace with thumbnail when the topic has an image* / *Always replace* / *Hide avatar*. |
 | **Always show rating controls in the discussion menu** | Off | By default, *Disable Rating* / *Reset All Ratings* appear in the ⋮ dropdown only when the rating is shown on that topic (hidden when its tags disable rating). Turn on to always show them (still gated by the moderation permissions) — useful for managing ratings where the widget is hidden. |
+| **Live rating updates** | On | Background polling so ratings update in near real time on open discussion pages. Turn **off** to disable all polling (page + modal) — ratings then refresh only on the user's own action or a page reload. |
+| **Live update interval (seconds)** | 8 | How often an open discussion page polls for new ratings (5–300). Raise it to cut background load on busy forums. Applies to the page poll; the ratings modal keeps its own faster refresh. |
 | **Per-tag rating permissions** ¹ | empty / all enabled | Card-grid tree. Per-primary-tag state (*Enabled / Disabled / Allow groups*), per-(primary × secondary) override (*Inherit* by default). |
 | **Secondary tags used on their own** ¹ | Disabled | Standalone list controlling discussions tagged with **only a secondary tag, no primary** (e.g. announcements posted bypassing tag-count limits). Per tag *Enabled / Disabled*; opt-in. A secondary-only topic is rateable if **any** of its secondary tags is enabled here. |
 | **Allow rating on discussions with no tags** ¹ | On | When off, tagless discussions show no rating widget and can't be rated. |
@@ -155,6 +157,13 @@ Enable the extension in **Admin Panel → Extensions → Topic Rating**.
 ¹ Visible only when `flarum/tags` is enabled.
 ² Visible only when a single-star *Display style* is selected (the modal-rate toggle appears only when "Make the single star clickable" is on).
 ³ **Shared** setting — the same Desktop/Mobile avatar section appears in the `flarum-thumb-sliders` admin, and changing it in either extension updates the other. The *Replace* modes only take effect when Thumb Sliders is installed and showing a thumbnail; *Hide* works regardless.
+
+> **Scaling tip:** live updates poll per open discussion page, so background request
+> volume grows with the number of concurrent readers. On busy forums (≳200
+> simultaneous discussion-page viewers) raise **Live update interval** to **30–60 s**,
+> or switch **Live rating updates** off entirely — ratings still work, they just
+> refresh on action / reload instead of live. (Jitter, exponential back-off and a
+> hidden-tab pause already bound the worst case.)
 
 ### Per-tag permissions — how the policy decides
 

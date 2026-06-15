@@ -95,6 +95,12 @@ const adminExtender = new Extend.Admin()
         type: 'boolean',
     }))
     .setting(() => ({
+        setting: 'tryhackx-topic-rating.realtime_enabled',
+        label: app.translator.trans('tryhackx-topic-rating.admin.settings.realtime_enabled_label', {}, true),
+        help: app.translator.trans('tryhackx-topic-rating.admin.settings.realtime_enabled_help', {}, true),
+        type: 'boolean',
+    }))
+    .setting(() => ({
         setting: 'tryhackx-topic-rating.poll_interval',
         label: app.translator.trans('tryhackx-topic-rating.admin.settings.poll_interval_label', {}, true),
         help: app.translator.trans('tryhackx-topic-rating.admin.settings.poll_interval_help', {}, true),

@@ -31,6 +31,11 @@ class RatingPolling {
     }
 
     start(discussion) {
+        // Master switch: when live rating updates are turned off, never start the
+        // background poll. Ratings still load and update on the user's own action.
+        if (app.forum.attribute('tryhackxTopicRatingRealtimeEnabled') === false) {
+            return;
+        }
         this.stop();
         this.discussionId = discussion.id();
         this.paused = false;

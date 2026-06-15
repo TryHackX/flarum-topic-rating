@@ -94,6 +94,10 @@ return [
         // to the discussion's ⋮ controls menu. Handy for managing ratings when
         // the star widget is hidden. Default false = not shown in the menu.
         ->serializeToForum('tryhackxTopicRatingShowModerationControls', 'tryhackx-topic-rating.show_moderation_controls', 'boolval', false)
+        // Master switch for live (polled) rating updates. Default ON; when off no
+        // background polling runs at all (neither the discussion page nor the modal)
+        // — ratings still load and update on the user's own action, just not live.
+        ->serializeToForum('tryhackxTopicRatingRealtimeEnabled', 'tryhackx-topic-rating.realtime_enabled', 'boolval', true)
         // Discussion-page live-poll base interval in seconds (clamped 5–300, default
         // 8). Lets large forums dial back the per-visitor polling load. Read by
         // RatingPolling.js; the modal poll keeps its own faster cadence.
@@ -121,5 +125,6 @@ return [
         ->default('tryhackx-topic-rating.hide_empty_for_nonvoters', false)
         ->default('tryhackx-topic-rating.hide_disabled_ratings', true)
         ->default('tryhackx-topic-rating.show_moderation_controls', false)
+        ->default('tryhackx-topic-rating.realtime_enabled', true)
         ->default('tryhackx-topic-rating.poll_interval', 8),
 ];
