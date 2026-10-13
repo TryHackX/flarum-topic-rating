@@ -7,6 +7,9 @@
          stopOnFailure="false"
          bootstrap="../vendor/autoload.php"
          cacheDirectory=".phpunit.cache">
+    <php>
+        <ini name="memory_limit" value="1G"/>
+    </php>
     <testsuites>
         <testsuite name="Topic Rating Integration Tests">
             <directory suffix="Test.php">./integration</directory>

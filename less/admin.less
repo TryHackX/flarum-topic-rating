@@ -87,7 +87,23 @@
   font-style: italic;
 }
 
+// Card grid shared by the per-tag tree and the standalone-secondary list: as many
+// ≥340px columns as fit, at most 4. Core's .Form-group is a column flexbox with
+// align-items:flex-start, which shrink-wraps the list to ONE card's width — so the
+// list (and the tree around it) must stretch across the settings column.
+.tagPermissionCardGrid() {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(~"max(min(340px, 100%), calc((100% - 3 * 12px) / 4))", 1fr));
+  align-items: start;
+  align-self: stretch;
+  width: 100%;
+  gap: 12px;
+}
+
 .TagPermissionTree {
+  align-self: stretch;
+  width: 100%;
+
   &-adminNote {
     font-size: 12px;
     background: rgba(255, 255, 255, 0.04);
@@ -124,9 +140,7 @@
   }
 
   &-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 12px;
+    .tagPermissionCardGrid();
     border: 0;
     background: transparent;
     overflow: visible;
@@ -352,6 +366,8 @@
 // secondary tag, no primary). Rendered below the primary tree by the same
 // TagPermissionTree component; rows reuse the .TagPermissionTree-row--root look.
 .TagPermissionSecondaryTree {
+  align-self: stretch;
+  width: 100%;
   margin-top: 18px;
   border-top: 1px solid var(--control-bg);
   padding-top: 12px;
@@ -381,13 +397,9 @@
     margin: 6px 0 10px;
   }
 
-  // Single ≤360px column so the rows stack vertically like the primary tree
-  // (whose grid collapses to one 360px column inside the column-flex Form-group).
-  // Without this the list fills the help-text-stretched wrapper and goes wide.
+  // Same multi-column card grid as the per-tag tree above.
   &-list {
-    display: grid;
-    grid-template-columns: minmax(0, 360px);
-    gap: 12px;
+    .tagPermissionCardGrid();
   }
 }
 

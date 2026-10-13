@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-10-13
+
+### Fixed
+- **Per-tag rating permissions showed one long column.** The tag cards are meant to be a grid, but
+  core's `.Form-group` (a column flexbox with `align-items: flex-start`) shrink-wrapped the list to a
+  single card's width. The tree and the "Secondary tags used on their own" list now stretch across
+  the settings column and lay the cards out in as many ≥340 px columns as fit — at most 4 — with
+  expanded cards no longer stretching their neighbours.
+
+### Tests
+- The suite now compiles the forum and admin LESS (`FrontendAssetsTest`).
+
 ## [2.5.0] - 2026-10-13
 
 > Adds the **author's own rating ("review mode")** options requested on GitHub,
