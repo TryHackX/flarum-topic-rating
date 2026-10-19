@@ -4,6 +4,7 @@ namespace TryHackX\TopicRating\Access;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Extension\ExtensionManager;
+use Flarum\Group\Group;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\Access\AbstractPolicy;
 use Flarum\User\User;
@@ -15,14 +16,23 @@ class RatingPolicy extends AbstractPolicy
     /** Per-request memoization (Gate caches policy instances within a request). */
     protected ?array $cachedTagConfig = null;
     protected ?array $cachedBypassGroups = null;
-    /** @var array<int|string, array<int, string>> */
-    protected array $cachedActorGroupIds = [];
+    /**
+     * Group ids per actor INSTANCE: the Gate keeps policy instances for the life
+     * of the container, which outlives a request in long-running servers (and in
+     * the test suite). Keyed by the User object — each request loads its own
+     * actor — a suspension or group change is seen on the next request, not
+     * shadowed by an earlier answer for the same user id.
+     *
+     * @var \WeakMap<User, array<int, string>>
+     */
+    protected \WeakMap $cachedActorGroupIds;
 
     public function __construct(
         protected SettingsRepositoryInterface $settings,
         protected ExtensionManager $extensions,
         protected AuthorModeResolver $authorModes
     ) {
+        $this->cachedActorGroupIds = new \WeakMap();
     }
 
     public function rate(User $actor, Discussion $discussion)
@@ -340,20 +350,32 @@ class RatingPolicy extends AbstractPolicy
     }
 
     /**
-     * Memoize actor → group-ids list (admin auto-includes group '1').
+     * Memoize actor → group-ids list, as core sees them for permissions
+     * (User::permissionGroupIds()): the implicit Members group included and every
+     * group processor applied — flarum/suspend turns a suspended user into a
+     * guest, and an unactivated account counts as a guest too. The raw `groups`
+     * relation missed both: a suspended user kept rating through a bypass or
+     * allowed group, and "Members" picked in the group pickers matched no one.
+     * Guests are dropped (only registered users rate); admin auto-includes '1'.
      * @return array<int, string>
      */
     protected function actorGroupIds(User $actor): array
     {
-        $key = (string) ($actor->id ?? 'guest');
-        if (isset($this->cachedActorGroupIds[$key])) {
-            return $this->cachedActorGroupIds[$key];
+        if (isset($this->cachedActorGroupIds[$actor])) {
+            return $this->cachedActorGroupIds[$actor];
         }
-        $ids = $actor->id ? $actor->groups->pluck('id')->map(fn ($id) => (string) $id)->all() : [];
+        $ids = [];
+        if ($actor->id) {
+            foreach ($actor->permissionGroupIds() as $id) {
+                if ((int) $id !== Group::GUEST_ID) {
+                    $ids[] = (string) $id;
+                }
+            }
+        }
         if ($actor->isAdmin() && ! in_array('1', $ids, true)) {
             $ids[] = '1';
         }
-        return $this->cachedActorGroupIds[$key] = $ids;
+        return $this->cachedActorGroupIds[$actor] = $ids;
     }
 
     /**

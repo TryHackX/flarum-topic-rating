@@ -301,7 +301,7 @@ database). The JS tests need Node 22+.
 
 ## Compatibility
 
-- This (`2.x`) release line requires **Flarum 2.0+** and **PHP 8.3+** (matching `flarum/core`'s own requirement).
+- This (`2.x`) release line requires **Flarum 2.0.2+** and **PHP 8.3+** (matching `flarum/core`'s own requirement).
 - Flarum 1.x is not supported (the old 1.x line has been discontinued).
 - Per-tag features auto-activate only when `flarum/tags` is enabled.
 

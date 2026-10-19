@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-20
+
+### Security
+- **Group rules read the actor's groups the way core does.** Bypass groups and the per-tag
+  "groups" state matched against the raw `groups` relation, which skips core's group
+  processors: a user suspended by flarum/suspend (core then treats them as a guest) kept
+  rating through a bypass or allowed group. The policy now uses
+  `User::permissionGroupIds()` — suspension and activation apply, guests are dropped.
+
+### Fixed
+- **"Members" picked in the group pickers now works.** Members is an implicit group (not
+  stored in `group_user`), so selecting it as a bypass group or for a tag's "groups" state
+  matched no one; `permissionGroupIds()` includes it.
+- The per-actor group cache is keyed by the actor instance instead of the user id: the Gate
+  keeps policy instances for the container's lifetime, so in long-running servers a group
+  change or suspension could be shadowed by an earlier answer for the same user.
+
+### Changed
+- Requires Flarum `^2.0.2`. New integration test `GroupRulesTest` (flarum/suspend added to
+  `require-dev`); the whole suite (unit + integration) passes on Flarum 2.0.2.
+
 ## [2.5.1] - 2026-10-13
 
 ### Fixed
