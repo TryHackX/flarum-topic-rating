@@ -18,7 +18,10 @@ export default class BypassGroupPicker extends Component {
     parseValue() {
         try {
             const v = this.attrs.settingValue();
-            if (!v) return ['1'];
+            // Absent = the backend default (Admin). A stored empty string decodes to
+            // no groups server-side (RatingPolicy::getBypassGroups) — show it so.
+            if (v === undefined || v === null) return ['1'];
+            if (v === '') return [];
             const parsed = JSON.parse(v);
             return Array.isArray(parsed) ? parsed.map(String) : [];
         } catch (_) {

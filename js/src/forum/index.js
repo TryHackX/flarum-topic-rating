@@ -19,6 +19,16 @@ import '../common/extend';
 // variant chosen here and the placement chosen there agree on the device.
 const PHONE_QUERY = '(max-width: 767.98px)';
 
+// Is the rating shown on this discussion at all? Not when a moderator disabled it
+// there, nor when the backend resolved the widget as `hidden` for this viewer (the
+// admin's master switch off, untagged topics excluded, a restricted viewer under
+// "hidden", …). Everything rating-related on the page follows it: the stars, the
+// "Last rated" note and the background poll.
+function ratingVisible(discussion) {
+    if (!discussion || discussion.ratingDisabled()) return false;
+    return !(discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden');
+}
+
 app.initializers.add('tryhackx-topic-rating', () => {
     app.store.models['discussion-ratings'] = Rating;
 
@@ -27,8 +37,7 @@ app.initializers.add('tryhackx-topic-rating', () => {
 
     extend(DiscussionHero.prototype, 'items', function (items) {
         const discussion = this.attrs.discussion;
-        if (!discussion || discussion.ratingDisabled()) return;
-        if (discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden') return;
+        if (!ratingVisible(discussion)) return;
 
         items.add('rating',
             <StarRating
@@ -47,8 +56,7 @@ app.initializers.add('tryhackx-topic-rating', () => {
         if (app.forum.attribute('tryhackxTopicRatingShowOnList') === false) return;
 
         const discussion = this.attrs.discussion;
-        if (!discussion || discussion.ratingDisabled()) return;
-        if (discussion.ratingDisplayMode && discussion.ratingDisplayMode() === 'hidden') return;
+        if (!ratingVisible(discussion)) return;
 
         // Resolve the per-device display style. discussionListLayout.js reads the
         // SAME attributes to decide placement (meta column vs end of the title);
@@ -108,8 +116,12 @@ app.initializers.add('tryhackx-topic-rating', () => {
         );
     });
 
-    extend(DiscussionPage.prototype, 'show', function (discussion) {
-        if (discussion && !discussion.ratingDisabled()) {
+    // extend() calls back with the method's RETURN value first, then its arguments:
+    // show() returns nothing, so the discussion is the second parameter. (Taking it
+    // as the first one meant `undefined` — the page poll never started at all.)
+    extend(DiscussionPage.prototype, 'show', function (_returned, discussion) {
+        // Nothing to keep live when the widget isn't shown.
+        if (ratingVisible(discussion)) {
             RatingPolling.start(discussion);
         }
     });
@@ -123,7 +135,7 @@ app.initializers.add('tryhackx-topic-rating', () => {
         if (!post) return;
 
         const discussion = post.discussion();
-        if (!discussion || !discussion.lastRatedAt()) return;
+        if (!ratingVisible(discussion) || !discussion.lastRatedAt()) return;
 
         if (post.number() === 1) {
             items.add('lastRated',
@@ -134,6 +146,9 @@ app.initializers.add('tryhackx-topic-rating', () => {
     });
 
     extend(DiscussionControls, 'moderationControls', function (items, discussion) {
+        // The admin's master switch is off: there's no rating to manage anywhere.
+        if (app.forum.attribute('tryhackxTopicRatingEnabled') === false) return;
+
         // By default the rating moderation items FOLLOW the rating's visibility:
         // shown when the rating is shown on this topic, hidden when its tags /
         // untagged config hide it (managing a hidden rating would do nothing).

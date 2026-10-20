@@ -37,7 +37,9 @@ class RatingPolicy extends AbstractPolicy
 
     public function rate(User $actor, Discussion $discussion)
     {
-        if ($discussion->rating_disabled) {
+        // Master switch ("Enable Topic Rating"): off = nobody rates, bypass groups
+        // and admins included.
+        if (! $this->ratingEnabled() || $discussion->rating_disabled) {
             return $this->deny();
         }
 
@@ -162,6 +164,17 @@ class RatingPolicy extends AbstractPolicy
     public function isAuthor(User $actor, Discussion $discussion): bool
     {
         return $actor->id && $discussion->user_id && (int) $discussion->user_id === (int) $actor->id;
+    }
+
+    /**
+     * The admin's master switch ("Enable Topic Rating", default on). It used to
+     * be saved and serialized but read nowhere, so switching it off changed
+     * nothing; off now means no one can rate and the widget is hidden everywhere
+     * (the `ratingDisplayMode` field returns `hidden`). Stored ratings are kept.
+     */
+    public function ratingEnabled(): bool
+    {
+        return (bool) $this->settings->get('tryhackx-topic-rating.enabled', true);
     }
 
     /**

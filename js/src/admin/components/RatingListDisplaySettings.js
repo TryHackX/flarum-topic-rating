@@ -51,7 +51,9 @@ export default class RatingListDisplaySettings extends Component {
   boolSetting(key, def) {
     const v = app.data.settings[key];
     if (v === undefined || v === null) return def;
-    return v !== false && v !== '0' && v !== 0 && v !== 'false';
+    // '' is how Flarum stores a switched-off boolean, and boolval('') — what the
+    // forum is served (extend.php) — is false: show it as off here too.
+    return v !== false && v !== '' && v !== '0' && v !== 0 && v !== 'false';
   }
 
   view() {

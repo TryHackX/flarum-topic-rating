@@ -141,7 +141,7 @@ Enable the extension in **Admin Panel → Extensions → Topic Rating**.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| **Enable Topic Rating** | On | Master switch for the extension. |
+| **Enable Topic Rating** | On | Master switch for the extension. Off: nobody can rate (admins and bypass groups included) and the rating — stars, "Last rated" note, moderation menu items, live updates — is hidden everywhere. Stored ratings are kept and come back when it's switched on again. |
 | **Allow unactivated accounts to rate** | Off | Users without email confirmation can submit ratings. |
 | **Show rating in discussion list** | On | Visibility toggle for the stars on the homepage list. When off, ratings stay on the discussion page. |
 | **Allow rating from the discussion list** | On | Make the *full-stars-in-place* list stars interactive (click + hover preview). When off, the list shows the rating read-only. |

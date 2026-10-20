@@ -153,11 +153,8 @@ export default class TagPermissionTree extends Component {
     // A discussion tagged with ONLY secondary tags (no primary) is resolved by
     // the backend via each secondary's own (bare) key — separate from the
     // `primary_secondary` overrides above. These rows let the admin set that
-    // standalone state. Default is "Enabled" (matches the policy default), so
-    // only "Disabled" gets persisted.
-
-    // Standalone secondary tags default to Disabled, so the "exceptions" worth
-    // badging are the ones explicitly Enabled.
+    // standalone state. Default is "Disabled" (matches the policy default), so
+    // only "Enabled" gets persisted — and those are the exceptions worth badging.
     secondaryEnabledCount() {
         let n = 0;
         for (const tag of this.childrenOf()) {
@@ -214,7 +211,7 @@ export default class TagPermissionTree extends Component {
 
                 {this.loadError && (
                     <p className="helpText TagPermissionTree-error">
-                        Failed to load tags. See browser console.
+                        {app.translator.trans('tryhackx-topic-rating.admin.settings.tags_load_error', {}, true)}
                     </p>
                 )}
 

@@ -45,6 +45,7 @@ tryhackx-topic-rating:
       tag_collapse_all: Zwiń wszystkie
       tags_unavailable: Rozszerzenie Tagi musi być zainstalowane i włączone aby skorzystać z uprawnień per tag.
       tags_empty: Brak tagów. Najpierw utwórz tagi w ustawieniach rozszerzenia Tagi.
+      tags_load_error: Nie udało się wczytać tagów — szczegóły w konsoli przeglądarki.
 
       untagged_enabled_label: Pozwól oceniać tematy bez tagów
       untagged_enabled_help: Gdy wyłączone, tematy bez żadnych tagów nie pokazują widżetu oceny i nie można ich oceniać. Przydatne, gdy chcesz, by oceniane były tylko wybrane tagi. Domyślnie włączone.

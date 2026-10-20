@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] - 2026-10-20
+
+### Fixed
+- **Live rating updates on the discussion page work.** The page poll was hooked with
+  `extend(DiscussionPage.prototype, 'show', function (discussion) …)`, but `extend()` passes
+  the method's return value first — `show()` returns nothing, so the "discussion" was always
+  `undefined` and the poll never started: only the ratings modal refreshed itself. The
+  discussion is now taken from the right argument; scores (and a moderator disabling the
+  rating, now part of the change check) update without a reload, at the configured interval.
+- **The "Enable Topic Rating" master switch does something.** It was saved and serialized
+  but read nowhere, so switching it off changed nothing. Off now means: nobody can rate
+  (admins and bypass groups included, the API answers 403) and the rating is hidden
+  everywhere — `ratingDisplayMode` is `hidden`, no stars, no "Last rated" note, no rating
+  items in the moderation menu, no background poll. Stored ratings are kept and come back
+  when it is switched on again. New integration test `MasterSwitchTest`.
+- **The viewer's own rating is never served from an earlier request.** The per-request
+  preload of the actor's ratings was keyed by user id on an object that lives as long as the
+  API resources (all requests of a process — several in a row in the test suite or a
+  long-running server), so right after rating the API could still answer `userRating: null`.
+  It is keyed by the actor instance now, like the policy's group cache.
+- The "Last rated" note and the page poll follow the widget: not shown / not running when
+  the rating is hidden for the viewer or disabled on the topic.
+- Admin: a setting stored as an empty string — how Flarum saves a switched-off boolean — is
+  shown as the backend reads it: no bypass groups (not "Admin"), single star not clickable
+  (not "on"). The tag tree's load error is translated; a stale comment about standalone
+  secondary tags corrected.
+
 ## [2.6.0] - 2026-10-20
 
 ### Security

@@ -64,6 +64,24 @@ class DefaultModeTest extends RatingTestCase
     }
 
     #[Test]
+    public function the_viewers_own_rating_is_current_on_every_request(): void
+    {
+        // Several requests in one process share the API resources (and the field
+        // definitions with them) — the viewer's rating must not come from an
+        // earlier request's preload.
+        $this->assertNull($this->discussion(self::REVIEW, self::MEMBER)['userRating']);
+
+        $this->assertRated($this->rate(self::MEMBER, self::REVIEW, 7));
+        $this->assertSame(7, $this->discussion(self::REVIEW, self::MEMBER)['userRating']);
+
+        $this->assertRated($this->rate(self::MEMBER, self::REVIEW, 3));
+        $this->assertSame(3, $this->discussion(self::REVIEW, self::MEMBER)['userRating']);
+
+        $this->assertSame(204, $this->unrate(self::MEMBER, self::REVIEW)->getStatusCode());
+        $this->assertNull($this->discussion(self::REVIEW, self::MEMBER)['userRating']);
+    }
+
+    #[Test]
     public function out_of_range_ratings_are_rejected(): void
     {
         $this->assertSame(422, $this->rate(self::MEMBER, self::REVIEW, 11)->getStatusCode());

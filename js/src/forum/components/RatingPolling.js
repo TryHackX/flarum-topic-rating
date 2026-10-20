@@ -114,12 +114,14 @@ class RatingPolling {
 
             const oldAvg = discussion.ratingAverage();
             const oldCount = discussion.ratingCount();
-            // The author's rating ("separate" mode), the mode itself and the
-            // moderators' stored total can change without moving the shown score.
+            // The author's rating ("separate" mode), the mode itself, the
+            // moderators' stored total and a moderator disabling / re-enabling the
+            // rating can all change without moving the shown score.
             const changed = (key) => data[key] !== undefined && discussion[key] && data[key] !== discussion[key]();
 
             if (data.ratingAverage !== oldAvg || data.ratingCount !== oldCount
-                || changed('authorRating') || changed('ratingAuthorMode') || changed('ratingTotalCount')) {
+                || changed('authorRating') || changed('ratingAuthorMode') || changed('ratingTotalCount')
+                || changed('ratingDisabled')) {
                 discussion.pushData({
                     attributes: {
                         ratingAverage: data.ratingAverage,

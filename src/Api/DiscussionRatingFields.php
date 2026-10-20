@@ -6,6 +6,7 @@ use Flarum\Api\Context;
 use Flarum\Api\Schema;
 use Flarum\Discussion\Discussion;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Flarum\User\User;
 use TryHackX\TopicRating\Access\RatingPolicy;
 use TryHackX\TopicRating\AuthorMode;
 use TryHackX\TopicRating\AuthorModeResolver;
@@ -23,31 +24,23 @@ use TryHackX\TopicRating\Rating;
 class DiscussionRatingFields
 {
     /**
-     * Per-request cache of the actor's own ratings, keyed by actor id then
-     * discussion id. Loaded in a single query the first time `userRating` is
-     * read, which turns the old one-query-per-discussion lookup (an N+1 on
-     * every discussion-list render) into one query per request.
+     * The actor's own ratings, loaded in a single query the first time
+     * `userRating` is read — which turns the old one-query-per-discussion lookup
+     * (an N+1 on every discussion-list render) into one query per request.
      *
-     * @var array<int, array<int, int>>
-     */
-    protected array $actorRatings = [];
-
-    /**
-     * Whether {@see actorRatingsFor} loaded the actor's complete set (i.e. the
-     * preload wasn't truncated by the cap). When true, an id missing from the map
-     * means "not rated" and no per-discussion fallback lookup is needed.
+     * Keyed by the actor INSTANCE, not the user id: these field definitions are
+     * built once per API resource and reused by every request the process serves
+     * (several in a row in the test suite, or in a long-running server — even a
+     * forum page's own preload goes through the API). Each request loads its own
+     * actor, so a rating written by an earlier request is never read from a stale
+     * preload (an id-keyed cache answered `null` right after the user rated).
+     * Per actor: `ratings` [discussionId => rating], `complete` (the preload
+     * wasn't truncated by the cap, so a missing id means "not rated") and
+     * `misses` (per-discussion fallback lookups, nulls included).
      *
-     * @var array<int, bool>
+     * @var \WeakMap<User, object{ratings: array<int, int>, complete: bool, misses: array<int, int|null>}>
      */
-    protected array $actorRatingsComplete = [];
-
-    /**
-     * Per-discussion fallback cache (incl. nulls) for actors whose rating count
-     * exceeds the preload cap, keyed by actor id then discussion id.
-     *
-     * @var array<int, array<int, int|null>>
-     */
-    protected array $actorRatingMisses = [];
+    protected \WeakMap $actorRatings;
 
     /**
      * Upper bound on the per-request bulk preload of an actor's ratings. Chosen
@@ -61,6 +54,7 @@ class DiscussionRatingFields
         protected SettingsRepositoryInterface $settings,
         protected AuthorModeResolver $authorModes
     ) {
+        $this->actorRatings = new \WeakMap();
     }
 
     public function __invoke(): array
@@ -87,6 +81,7 @@ class DiscussionRatingFields
                     if (! $actor->id || $actor->is_email_confirmed
                         || $actor->can('rate', $discussion)
                         || $discussion->rating_disabled
+                        || ! $this->policy->ratingEnabled()
                         // Activating wouldn't help when the author mode rules them out.
                         || $this->policy->authorRuleBlocks($actor, $discussion)
                     ) {
@@ -100,6 +95,11 @@ class DiscussionRatingFields
             Schema\Str::make('ratingDisplayMode')
                 ->get(function (Discussion $discussion, Context $context) {
                     $actor = $context->getActor();
+
+                    // Master switch off: no widget anywhere, for anyone.
+                    if (! $this->policy->ratingEnabled()) {
+                        return 'hidden';
+                    }
 
                     // Tagless discussions with "allow rating on untagged
                     // discussions" turned off are hidden entirely (regardless of
@@ -180,7 +180,7 @@ class DiscussionRatingFields
                     if (! $actor->id) {
                         return null;
                     }
-                    return $this->userRatingFor((int) $actor->id, (int) $discussion->id);
+                    return $this->userRatingFor($actor, (int) $discussion->id);
                 }),
         ];
     }
@@ -198,57 +198,57 @@ class DiscussionRatingFields
      * (search results are null in getters), so this cap is the bound available
      * without re-architecting the resource layer.
      */
-    protected function userRatingFor(int $actorId, int $discussionId): ?int
+    protected function userRatingFor(User $actor, int $discussionId): ?int
     {
-        $preloaded = $this->actorRatingsFor($actorId);
+        $cache = $this->actorRatingsFor($actor);
 
-        if (array_key_exists($discussionId, $preloaded)) {
-            return $preloaded[$discussionId];
+        if (array_key_exists($discussionId, $cache->ratings)) {
+            return $cache->ratings[$discussionId];
         }
 
         // The preload held the actor's full set — an absent id genuinely means
         // "not rated", no lookup needed.
-        if ($this->actorRatingsComplete[$actorId] ?? false) {
+        if ($cache->complete) {
             return null;
         }
 
         // Capped preload may have omitted this discussion; resolve it directly and
         // cache the result (incl. nulls) so repeats within the request are free.
-        if (! array_key_exists($discussionId, $this->actorRatingMisses[$actorId] ?? [])) {
+        if (! array_key_exists($discussionId, $cache->misses)) {
             $rating = Rating::query()
-                ->where('user_id', $actorId)
+                ->where('user_id', $actor->id)
                 ->where('discussion_id', $discussionId)
                 ->value('rating');
-            $this->actorRatingMisses[$actorId][$discussionId] = $rating === null ? null : (int) $rating;
+            $cache->misses[$discussionId] = $rating === null ? null : (int) $rating;
         }
 
-        return $this->actorRatingMisses[$actorId][$discussionId];
+        return $cache->misses[$discussionId];
     }
 
     /**
-     * The actor's ratings as a [discussionId => rating] map, loaded once per
-     * request, capped at the most-recent {@see self::PRELOAD_CAP} entries.
+     * The actor's ratings ([discussionId => rating], capped at the most-recent
+     * {@see self::PRELOAD_CAP} entries), loaded once per actor instance.
      *
-     * @return array<int, int>
+     * @return object{ratings: array<int, int>, complete: bool, misses: array<int, int|null>}
      */
-    protected function actorRatingsFor(int $actorId): array
+    protected function actorRatingsFor(User $actor): object
     {
-        if (! isset($this->actorRatings[$actorId])) {
+        if (! isset($this->actorRatings[$actor])) {
             // Fetch one more than the cap so we can tell whether the set was
             // truncated (and thus whether per-discussion fallbacks are needed).
             $rows = Rating::query()
-                ->where('user_id', $actorId)
+                ->where('user_id', $actor->id)
                 ->orderByDesc('id')
                 ->limit(self::PRELOAD_CAP + 1)
                 ->pluck('rating', 'discussion_id');
 
-            $this->actorRatingsComplete[$actorId] = $rows->count() <= self::PRELOAD_CAP;
-            $this->actorRatings[$actorId] = $rows
-                ->take(self::PRELOAD_CAP)
-                ->map(fn ($r) => (int) $r)
-                ->all();
+            $this->actorRatings[$actor] = (object) [
+                'ratings' => $rows->take(self::PRELOAD_CAP)->map(fn ($r) => (int) $r)->all(),
+                'complete' => $rows->count() <= self::PRELOAD_CAP,
+                'misses' => [],
+            ];
         }
 
-        return $this->actorRatings[$actorId];
+        return $this->actorRatings[$actor];
     }
 }
